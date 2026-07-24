@@ -1,0 +1,14 @@
+.firecrawl/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Local experiment outputs
+outputs/
+predictions.json
+
+# Trained checkpoints can be large; add final submission artifacts explicitly.
+checkpoints/
+*.pt
+*.pth
