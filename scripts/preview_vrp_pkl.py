@@ -102,6 +102,19 @@ def _json_line(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, separators=(", ", ": "))
 
 
+def _json_block(value: Any) -> str:
+    return json.dumps(value, ensure_ascii=False, indent=2)
+
+
+def _sample_metadata(sample: dict[str, Any]) -> list[tuple[str, Any]]:
+    return [
+        ("instance_id", sample["instance_id"]),
+        ("tuple_length", sample["tuple_length"]),
+        ("customer_count", sample["customer_count"]),
+        ("capacity", sample["capacity"]),
+    ]
+
+
 def render_markdown(summaries: list[dict[str, Any]]) -> str:
     """Render dataset summaries as a readable Markdown document."""
     lines = [
@@ -152,12 +165,43 @@ def render_markdown(summaries: list[dict[str, Any]]) -> str:
                 [
                     f"### 样本 {sample['instance_id']}",
                     "",
+                    "#### 基本信息",
+                    "",
+                    "| 字段 | 值 |",
+                    "| --- | --- |",
+                ]
+            )
+            for key, value in _sample_metadata(sample):
+                lines.append(f"| {key} | `{_json_line(value)}` |")
+
+            lines.extend(
+                [
+                    "",
+                    "#### 坐标和需求预览",
+                    "",
                     "```json",
-                    _json_line(sample),
+                    _json_block(
+                        {
+                            "depot": sample["depot"],
+                            "loc_preview": sample["loc_preview"],
+                            "demand_preview": sample["demand_preview"],
+                        }
+                    ),
                     "```",
                     "",
                 ]
             )
+            if "routes" in sample:
+                lines.extend(
+                    [
+                        "#### 参考 routes 和 cost",
+                        "",
+                        "```json",
+                        _json_block({"routes": sample["routes"], "cost": sample["cost"]}),
+                        "```",
+                        "",
+                    ]
+                )
 
     return "\n".join(lines).rstrip() + "\n"
 

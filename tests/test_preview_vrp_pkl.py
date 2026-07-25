@@ -97,4 +97,9 @@ def test_render_markdown_shows_dataset_structure_and_samples():
     assert "| 实例数量 | `1` |" in markdown
     assert "`(depot, loc, demand, capacity, routes, cost)`" in markdown
     assert "### 样本 0" in markdown
-    assert "\"routes\": [[1, 2]]" in markdown
+    assert "#### 基本信息" in markdown
+    assert "| customer_count | `2` |" in markdown
+    assert "#### 坐标和需求预览" in markdown
+    assert '"loc_preview": [\n    [\n      1.0,' in markdown
+    assert "#### 参考 routes 和 cost" in markdown
+    assert '"routes": [\n    [\n      1,' in markdown
