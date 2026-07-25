@@ -157,10 +157,13 @@ This note will not:
 - Train a neural model.
 - Generate public-set predictions.
 - Write the final report or presentation slides.
-- Install new dependencies.
 
 Those tasks should be handled in later implementation phases after the note is
 reviewed.
+
+New dependencies may be installed if they are needed to generate the Markdown or
+PDF learning-note deliverables. Any newly required dependency should be explained
+and recorded so the workflow remains reproducible.
 
 ## Acceptance Criteria
 

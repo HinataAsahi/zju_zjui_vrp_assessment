@@ -40,6 +40,10 @@ cleared, unless the user explicitly changes the workflow.
 - Keep generated caches and local experiment outputs out of git.
 - Do not commit the raw project data directory unless the user explicitly asks
   for it.
+- New dependencies may be installed when needed for documentation generation,
+  implementation, evaluation, or training. Explain why the dependency is needed,
+  prefer the smallest practical dependency set, and record reproducibility
+  information in the relevant docs or environment files.
 - Use focused commits with conventional-style messages, such as
   `docs: ...`, `feat: ...`, `fix: ...`, or `test: ...`.
 - Push completed commits to the configured GitHub remote when appropriate.

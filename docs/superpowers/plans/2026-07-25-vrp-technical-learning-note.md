@@ -17,7 +17,8 @@
 - Do not train a neural model in this task.
 - Do not generate public-set predictions in this task.
 - Do not write the final report or presentation slides in this task.
-- Do not install new dependencies in this task.
+- New dependencies may be installed if needed to produce the Markdown or PDF
+  deliverables. Explain the reason and record reproducibility information.
 - Do not commit the raw project data directory unless the user explicitly asks for it.
 
 ---
