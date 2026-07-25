@@ -38,6 +38,9 @@ def test_build_dataset_summary_handles_labeled_instances():
     assert summary["has_reference_labels"] is True
     assert summary["reference_cost_mean"] == 2.75
     assert summary["reference_route_count_mean"] == 1.5
+    assert summary["samples"][0]["preview_item_count"] == 2
+    assert summary["samples"][0]["preview_is_truncated"] is False
+    assert summary["samples"][0]["demand_sum"] == 7.0
     assert summary["samples"][0]["routes"] == [[1, 2]]
     assert summary["samples"][0]["cost"] == 2.0
 
@@ -62,6 +65,32 @@ def test_build_dataset_summary_handles_unlabeled_instances():
     assert "reference_cost_mean" not in summary
     assert "routes" not in summary["samples"][0]
     assert "cost" not in summary["samples"][0]
+    assert summary["samples"][0]["demand_sum"] == 14.0
+
+
+def test_build_dataset_summary_can_show_complete_loc_and_demand():
+    data = [
+        (
+            [[0.0, 0.0]],
+            [[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]],
+            [2.0, 5.0, 7.0],
+            50.0,
+        )
+    ]
+
+    summary = build_dataset_summary(
+        "check_data_to_students.pkl",
+        data,
+        sample_count=1,
+        preview_items=None,
+    )
+
+    sample = summary["samples"][0]
+    assert sample["customer_count"] == 3
+    assert sample["preview_item_count"] == 3
+    assert sample["preview_is_truncated"] is False
+    assert sample["loc_preview"] == [[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]]
+    assert sample["demand_preview"] == [2.0, 5.0, 7.0]
 
 
 def test_render_markdown_shows_dataset_structure_and_samples():
@@ -82,8 +111,11 @@ def test_render_markdown_shows_dataset_structure_and_samples():
                 "depot": [[0.0, 0.0]],
                 "loc_preview": [[1.0, 0.0], [0.0, 1.0]],
                 "demand_preview": [3.0, 4.0],
+                "demand_sum": 7.0,
                 "capacity": 40.0,
                 "customer_count": 2,
+                "preview_item_count": 2,
+                "preview_is_truncated": False,
                 "routes": [[1, 2]],
                 "cost": 2.0,
             }
@@ -99,7 +131,11 @@ def test_render_markdown_shows_dataset_structure_and_samples():
     assert "### 样本 0" in markdown
     assert "#### 基本信息" in markdown
     assert "| customer_count | `2` |" in markdown
+    assert "| demand_sum | `7.0` |" in markdown
+    assert "| preview_item_count | `2` |" in markdown
+    assert "| preview_is_truncated | `false` |" in markdown
     assert "#### 坐标和需求预览" in markdown
+    assert "此处只控制坐标和 demand 的展示数量" in markdown
     assert '"loc_preview": [\n    [\n      1.0,' in markdown
     assert "#### 参考 routes 和 cost" in markdown
     assert '"routes": [\n    [\n      1,' in markdown

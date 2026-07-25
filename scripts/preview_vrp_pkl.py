@@ -22,8 +22,9 @@ def _float(value: Any) -> float:
     return float(value)
 
 
-def _to_preview(values: Iterable[Any], limit: int) -> list[Any]:
-    preview = list(values)[:limit]
+def _to_preview(values: Iterable[Any], limit: int | None) -> list[Any]:
+    items = list(values)
+    preview = items if limit is None else items[:limit]
     return _jsonable(preview)
 
 
@@ -47,7 +48,7 @@ def build_dataset_summary(
     file_label: str,
     data: list[tuple[Any, ...]],
     sample_count: int = 2,
-    preview_items: int = 5,
+    preview_items: int | None = 5,
 ) -> dict[str, Any]:
     """Summarize one VRP pickle dataset without mutating the input data."""
     tuple_lengths = Counter(len(instance) for instance in data)
@@ -75,14 +76,21 @@ def build_dataset_summary(
 
     for instance_id, instance in enumerate(data[:sample_count]):
         depot, loc, demand, capacity = instance[:4]
+        customer_count = len(loc)
+        preview_item_count = customer_count if preview_items is None else min(
+            preview_items, customer_count
+        )
         sample = {
             "instance_id": instance_id,
             "tuple_length": len(instance),
             "depot": _jsonable(depot),
             "loc_preview": _to_preview(loc, preview_items),
             "demand_preview": _to_preview(demand, preview_items),
+            "demand_sum": round(sum(_float(item) for item in demand), 6),
             "capacity": _float(capacity),
-            "customer_count": len(loc),
+            "customer_count": customer_count,
+            "preview_item_count": preview_item_count,
+            "preview_is_truncated": preview_item_count < customer_count,
         }
         if len(instance) >= 6:
             sample["routes"] = _jsonable(instance[4])
@@ -112,6 +120,9 @@ def _sample_metadata(sample: dict[str, Any]) -> list[tuple[str, Any]]:
         ("tuple_length", sample["tuple_length"]),
         ("customer_count", sample["customer_count"]),
         ("capacity", sample["capacity"]),
+        ("demand_sum", sample["demand_sum"]),
+        ("preview_item_count", sample["preview_item_count"]),
+        ("preview_is_truncated", sample["preview_is_truncated"]),
     ]
 
 
@@ -129,6 +140,8 @@ def render_markdown(summaries: list[dict[str, Any]]) -> str:
         "- 公开测试集不包含参考答案，tuple 长度为 4。",
         "- `loc[0]` 对应输出中的客户 `1`，即内部数组下标是 0-based，提交 routes 是 1-based。",
         "- depot 是隐含起终点，不应写进输出 routes。",
+        "- `loc_preview` 和 `demand_preview` 默认只展示前几个 customer，用来快速看结构；完整 customer 数量看 `customer_count`，完整需求总和看 `demand_sum`。",
+        "- 如果想查看样本中的全部 customer，可运行脚本时加 `--preview-items all`。",
         "",
     ]
 
@@ -178,6 +191,8 @@ def render_markdown(summaries: list[dict[str, Any]]) -> str:
                 [
                     "",
                     "#### 坐标和需求预览",
+                    "",
+                    f"此处只控制坐标和 demand 的展示数量：当前展示 `{sample['preview_item_count']}` / `{sample['customer_count']}` 个 customer。",
                     "",
                     "```json",
                     _json_block(
@@ -233,11 +248,19 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--samples", type=int, default=2, help="Samples per dataset.")
     parser.add_argument(
         "--preview-items",
-        type=int,
-        default=5,
-        help="Number of loc/demand values shown per sample.",
+        default="5",
+        help="Number of loc/demand values shown per sample, or 'all'.",
     )
     return parser.parse_args(argv)
+
+
+def parse_preview_items(raw_value: str) -> int | None:
+    if raw_value == "all":
+        return None
+    value = int(raw_value)
+    if value < 1:
+        raise ValueError("--preview-items must be a positive integer or 'all'")
+    return value
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -246,12 +269,13 @@ def main(argv: list[str] | None = None) -> int:
     for input_path in args.inputs:
         path = Path(input_path)
         data = load_pickle(path)
+        preview_items = parse_preview_items(args.preview_items)
         summaries.append(
             build_dataset_summary(
                 path.name,
                 data,
                 sample_count=args.samples,
-                preview_items=args.preview_items,
+                preview_items=preview_items,
             )
         )
 

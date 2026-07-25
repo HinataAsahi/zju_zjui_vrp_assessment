@@ -9,6 +9,8 @@
 - 公开测试集不包含参考答案，tuple 长度为 4。
 - `loc[0]` 对应输出中的客户 `1`，即内部数组下标是 0-based，提交 routes 是 1-based。
 - depot 是隐含起终点，不应写进输出 routes。
+- `loc_preview` 和 `demand_preview` 默认只展示前几个 customer，用来快速看结构；完整 customer 数量看 `customer_count`，完整需求总和看 `demand_sum`。
+- 如果想查看样本中的全部 customer，可运行脚本时加 `--preview-items all`。
 
 ## `train_data.pkl`
 
@@ -36,8 +38,13 @@
 | tuple_length | `6` |
 | customer_count | `50` |
 | capacity | `40.0` |
+| demand_sum | `261.0` |
+| preview_item_count | `5` |
+| preview_is_truncated | `true` |
 
 #### 坐标和需求预览
+
+此处只控制坐标和 demand 的展示数量：当前展示 `5` / `50` 个 customer。
 
 ```json
 {
@@ -163,8 +170,13 @@
 | tuple_length | `6` |
 | customer_count | `50` |
 | capacity | `40.0` |
+| demand_sum | `263.0` |
+| preview_item_count | `5` |
+| preview_is_truncated | `true` |
 
 #### 坐标和需求预览
+
+此处只控制坐标和 demand 的展示数量：当前展示 `5` / `50` 个 customer。
 
 ```json
 {
@@ -306,8 +318,13 @@
 | tuple_length | `6` |
 | customer_count | `50` |
 | capacity | `40.0` |
+| demand_sum | `260.0` |
+| preview_item_count | `5` |
+| preview_is_truncated | `true` |
 
 #### 坐标和需求预览
+
+此处只控制坐标和 demand 的展示数量：当前展示 `5` / `50` 个 customer。
 
 ```json
 {
@@ -433,8 +450,13 @@
 | tuple_length | `6` |
 | customer_count | `50` |
 | capacity | `40.0` |
+| demand_sum | `234.0` |
+| preview_item_count | `5` |
+| preview_is_truncated | `true` |
 
 #### 坐标和需求预览
+
+此处只控制坐标和 demand 的展示数量：当前展示 `5` / `50` 个 customer。
 
 ```json
 {
@@ -574,8 +596,13 @@
 | tuple_length | `4` |
 | customer_count | `50` |
 | capacity | `40.0` |
+| demand_sum | `251.0` |
+| preview_item_count | `5` |
+| preview_is_truncated | `true` |
 
 #### 坐标和需求预览
+
+此处只控制坐标和 demand 的展示数量：当前展示 `5` / `50` 个 customer。
 
 ```json
 {
@@ -627,8 +654,13 @@
 | tuple_length | `4` |
 | customer_count | `50` |
 | capacity | `40.0` |
+| demand_sum | `251.0` |
+| preview_item_count | `5` |
+| preview_is_truncated | `true` |
 
 #### 坐标和需求预览
+
+此处只控制坐标和 demand 的展示数量：当前展示 `5` / `50` 个 customer。
 
 ```json
 {
