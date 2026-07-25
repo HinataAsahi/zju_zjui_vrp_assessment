@@ -2,15 +2,16 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Write the formal Chinese technical learning note for the ZJU/ZJUI CVRP assessment project.
+**Goal:** Write the formal Chinese technical learning note for the ZJU CVRP assessment project in ZJUI.
 
-**Architecture:** This is a documentation-only task. The approved Chinese design spec defines the structure, and the final note will be a single Markdown file with focused sections that explain the project from problem understanding to practical baseline readiness.
+**Architecture:** This is a documentation-only task. The approved Chinese design spec defines the structure, and the final note will be a Markdown source file plus a PDF export generated from that Markdown. Both files should contain the same focused sections that explain the project from problem understanding to practical baseline readiness.
 
-**Tech Stack:** Markdown, local project `.pkl` dataset observations, official project outline parsed from `VRP_project/vrp_project_outline.docx`.
+**Tech Stack:** Markdown, Pandoc with `--pdf-engine=weasyprint`, local project `.pkl` dataset observations, official project outline parsed from `VRP_project/vrp_project_outline.docx`.
 
 ## Global Constraints
 
-- Final note path: `docs/vrp_project_technical_learning_note_zh.md`.
+- Final Markdown note path: `docs/vrp_project_technical_learning_note_zh.md`.
+- Final PDF note path: `docs/vrp_project_technical_learning_note_zh.pdf`.
 - Source spec: `docs/superpowers/specs/2026-07-24-vrp-technical-learning-note-design.zh.md`.
 - Do not implement `solve.py` in this task.
 - Do not train a neural model in this task.
@@ -25,12 +26,13 @@
 
 **Files:**
 - Create: `docs/vrp_project_technical_learning_note_zh.md`
+- Create: `docs/vrp_project_technical_learning_note_zh.pdf`
 - Read: `docs/superpowers/specs/2026-07-24-vrp-technical-learning-note-design.zh.md`
 - Read: `.firecrawl/vrp_project_outline.md`
 
 **Interfaces:**
 - Consumes: Approved spec sections and project observations from the official outline and dataset inspection.
-- Produces: A Chinese learning note that later baseline, `solve.py`, evaluation, report, and presentation work can reference.
+- Produces: A Chinese learning note in Markdown and PDF formats that later baseline, `solve.py`, evaluation, report, and presentation work can reference.
 
 - [ ] **Step 1: Read the approved Chinese spec**
 
@@ -84,7 +86,17 @@ Create `docs/vrp_project_technical_learning_note_zh.md` with these exact top-lev
 
 The body must explain concepts in Chinese, use this project's actual file names and tuple formats, and keep the depth at "from beginner to able to start work".
 
-- [ ] **Step 4: Verify the note covers the approved sections**
+- [ ] **Step 4: Export the PDF version**
+
+Run:
+
+```bash
+pandoc docs/vrp_project_technical_learning_note_zh.md -o docs/vrp_project_technical_learning_note_zh.pdf --pdf-engine=weasyprint
+```
+
+Expected: `docs/vrp_project_technical_learning_note_zh.pdf` is created from the Markdown source.
+
+- [ ] **Step 5: Verify the note covers the approved sections**
 
 Run:
 
@@ -94,7 +106,17 @@ rg -n "用一句话理解|数据应该怎么读|合法解|评价指标|baseline|
 
 Expected: The command finds headings or body text for every approved section.
 
-- [ ] **Step 5: Scan for unfinished markers**
+- [ ] **Step 6: Verify the PDF exists**
+
+Run:
+
+```bash
+test -s docs/vrp_project_technical_learning_note_zh.pdf
+```
+
+Expected: The command exits with status 0, proving the PDF exists and is not empty.
+
+- [ ] **Step 7: Scan for unfinished markers**
 
 Run:
 
@@ -104,7 +126,7 @@ rg -n "T[B]D|TO[D]O|place[ -]?holder|[?][?][?]|待[定]|未[定]|以后再[说]"
 
 Expected: The command exits with status 1 and prints no matches.
 
-- [ ] **Step 6: Check git diff scope**
+- [ ] **Step 8: Check git diff scope**
 
 Run:
 
@@ -113,16 +135,16 @@ git status --short
 git diff -- docs/vrp_project_technical_learning_note_zh.md
 ```
 
-Expected: The intended new note appears. Raw project data remains untracked and is not staged.
+Expected: The intended Markdown note and PDF export appear. Raw project data remains untracked and is not staged.
 
-- [ ] **Step 7: Commit and push the note**
+- [ ] **Step 9: Commit and push the note**
 
 Run:
 
 ```bash
-git add docs/vrp_project_technical_learning_note_zh.md
+git add docs/vrp_project_technical_learning_note_zh.md docs/vrp_project_technical_learning_note_zh.pdf
 git commit -m "docs: add VRP technical learning note"
 git push
 ```
 
-Expected: The commit contains only the formal Chinese learning note and is pushed to `origin/main`.
+Expected: The commit contains only the formal Chinese learning note Markdown and PDF files, then is pushed to `origin/main`.

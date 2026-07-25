@@ -140,12 +140,13 @@ List common errors:
 - Failing on CVRP-100.
 - Reporting low cost without checking feasibility.
 
-## Output File
+## Output Files
 
-The planned learning note should be written as:
+The planned learning note should be written as both Markdown and PDF:
 
 ```text
 docs/vrp_project_technical_learning_note_zh.md
+docs/vrp_project_technical_learning_note_zh.pdf
 ```
 
 ## Out Of Scope
@@ -171,6 +172,7 @@ The note is complete when:
   modeling.
 - The note connects each concept to this project's files and submission
   interface.
+- The Markdown note and PDF export contain the same approved content.
 - The note gives enough direction to start designing the baseline implementation.
 - The note does not drift into unrelated VRP theory or excessive mathematical
   detail.

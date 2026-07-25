@@ -127,10 +127,11 @@
 
 ## 输出文件
 
-计划中的正式中文学习笔记应写入：
+计划中的正式中文学习笔记应同时输出 Markdown 和 PDF 两种格式：
 
 ```text
 docs/vrp_project_technical_learning_note_zh.md
+docs/vrp_project_technical_learning_note_zh.pdf
 ```
 
 ## 不在本阶段范围内的内容
@@ -152,5 +153,6 @@ docs/vrp_project_technical_learning_note_zh.md
 - 初学者可以用自己的话解释项目目标、数据格式、可行性规则和评价指标。
 - 笔记能够说明为什么应该先做可行 baseline，再做复杂 AI 建模。
 - 笔记中的每个概念都能连接到本项目的文件和提交接口。
+- Markdown 笔记和 PDF 导出文件应包含相同的已批准内容。
 - 笔记给出足够方向，使后续 baseline 实现可以开始设计。
 - 笔记不会偏离到无关的 VRP 理论，也不会堆砌过多数学细节。

@@ -1,7 +1,7 @@
 # Project Collaboration Rules
 
-This repository is for the ZJU/ZJUI VRP assessment project. Follow these rules
-when working in this repository.
+This repository is for the ZJU VRP assessment project in ZJUI. Follow these
+rules when working in this repository.
 
 ## Skill Workflow
 
