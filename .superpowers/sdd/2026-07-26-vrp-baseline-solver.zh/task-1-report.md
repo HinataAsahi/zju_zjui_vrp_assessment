@@ -72,3 +72,69 @@ Result: `11 passed in 0.04s`.
 ## Concerns
 
 None for the scope of Task 1.
+
+## Fix Round 1
+
+### Change implemented
+
+- Kept route serialization 1-based and unchanged; no `+1` conversion was added.
+- Documented `SolutionRecord.routes` as using positive 1-based integer customer IDs.
+- Added writer validation that rejects customer ID `0` and negative IDs with `ValueError`.
+- Added writer validation that rejects non-integer IDs with `TypeError`.
+- Validation runs before creating the output directory or writing JSON.
+
+### TDD RED command/output
+
+Command:
+
+```bash
+python3 -m pytest tests/test_vrp_io.py -v
+```
+
+Result before the implementation change:
+
+```text
+collected 10 items
+7 passed, 3 failed in 0.07s
+EXIT_CODE=1
+```
+
+The three expected failures were the new rejection tests because the previous writer accepted `0`, `-1`, and `1.5`.
+
+### GREEN command/output
+
+Focused command:
+
+```bash
+python3 -m pytest tests/test_vrp_io.py -v
+```
+
+Result:
+
+```text
+collected 10 items
+10 passed in 0.03s
+EXIT_CODE=0
+```
+
+Accumulated relevant tests:
+
+```bash
+python3 -m pytest -v
+```
+
+Result: `14 passed in 0.03s`.
+
+`git diff --check` completed successfully.
+
+### Files changed
+
+- `src/vrp_io.py`
+- `tests/test_vrp_io.py`
+- This report file
+
+### Self-review and concerns
+
+- Valid 1-based routes remain unchanged in JSON, preserving the approved project convention.
+- Boolean values are rejected as non-integer route IDs despite Python treating `bool` as a subclass of `int`.
+- No concerns for the requested scope.

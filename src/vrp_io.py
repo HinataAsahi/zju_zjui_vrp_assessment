@@ -30,6 +30,8 @@ class CVRPInstance:
 
 @dataclass(frozen=True)
 class SolutionRecord:
+    """A solution whose route customer IDs are positive 1-based integers."""
+
     instance_id: int
     routes: tuple[Route, ...]
 
@@ -111,10 +113,26 @@ def load_instances(path: str | Path) -> list[CVRPInstance]:
     return [normalize_instance(index, raw) for index, raw in enumerate(data)]
 
 
+def _validate_routes(routes: Sequence[Route]) -> None:
+    for route in routes:
+        for customer in route:
+            if not isinstance(customer, int) or isinstance(customer, bool):
+                raise TypeError(
+                    "route customer IDs should be positive 1-based integers"
+                )
+            if customer <= 0:
+                raise ValueError(
+                    "route customer IDs should be positive 1-based integers"
+                )
+
+
 def write_solutions_json(
     path: str | Path,
     solutions: Sequence[SolutionRecord],
 ) -> None:
+    for solution in solutions:
+        _validate_routes(solution.routes)
+
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     payload = {

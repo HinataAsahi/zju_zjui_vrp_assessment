@@ -3,6 +3,8 @@ import pickle
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
@@ -118,3 +120,20 @@ def test_write_solutions_json_creates_parent_and_uses_cvrp_v1(tmp_path):
             {"instance_id": 1, "routes": [[2], [1]]},
         ],
     }
+
+
+@pytest.mark.parametrize("route", [((0, 1),), ((-1, 2),)])
+def test_write_solutions_json_rejects_non_positive_customer_ids(tmp_path, route):
+    with pytest.raises(ValueError, match="positive 1-based integer"):
+        write_solutions_json(
+            tmp_path / "predictions.json",
+            [SolutionRecord(instance_id=0, routes=route)],
+        )
+
+
+def test_write_solutions_json_rejects_non_integer_customer_ids(tmp_path):
+    with pytest.raises(TypeError, match="positive 1-based integer"):
+        write_solutions_json(
+            tmp_path / "predictions.json",
+            [SolutionRecord(instance_id=0, routes=((1.5,),))],
+        )
