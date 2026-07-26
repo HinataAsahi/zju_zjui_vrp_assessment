@@ -56,6 +56,37 @@ def test_normalize_unlabeled_instance_sets_reference_fields_to_none():
     assert instance.demand == (2.0, 5.0, 7.0)
 
 
+@pytest.mark.parametrize("customer", [0, 3])
+def test_normalize_labeled_instance_rejects_out_of_range_reference_customer(
+    customer,
+):
+    raw = (
+        [[0.0, 0.0]],
+        [[1.0, 0.0], [0.0, 1.0]],
+        [3, 4],
+        40.0,
+        [[customer]],
+        2.0,
+    )
+
+    with pytest.raises(ValueError, match="positive 1-based integer"):
+        normalize_instance(7, raw)
+
+
+def test_normalize_labeled_instance_rejects_fractional_reference_customer():
+    raw = (
+        [[0.0, 0.0]],
+        [[1.0, 0.0], [0.0, 1.0]],
+        [3, 4],
+        40.0,
+        [[1.5]],
+        2.0,
+    )
+
+    with pytest.raises(TypeError, match="positive 1-based integer"):
+        normalize_instance(7, raw)
+
+
 def test_load_instances_reads_pickle_list(tmp_path):
     data_path = tmp_path / "sample.pkl"
     raw_instances = [

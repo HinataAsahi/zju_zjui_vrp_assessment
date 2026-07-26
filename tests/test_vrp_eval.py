@@ -34,6 +34,17 @@ def test_compute_route_and_total_cost():
     assert compute_total_cost(instance, [[1, 2], [3]]) == 22.0
 
 
+@pytest.mark.parametrize("customer", [0, 4])
+def test_compute_route_cost_rejects_out_of_range_customer(customer):
+    with pytest.raises(ValueError, match="positive 1-based integer"):
+        compute_route_cost(make_instance(), [customer])
+
+
+def test_compute_route_cost_rejects_fractional_customer():
+    with pytest.raises(TypeError, match="positive 1-based integer"):
+        compute_route_cost(make_instance(), [1.9])
+
+
 def test_validate_solution_accepts_feasible_routes():
     result = validate_solution(make_instance(), [[1, 2], [3]])
 
@@ -66,6 +77,14 @@ def test_validate_solution_rejects_non_integer_customer():
 
     assert result.is_feasible is False
     assert "non_integer_customer:2" in result.errors
+
+
+def test_validate_solution_preserves_fractional_customer_in_error():
+    result = validate_solution(make_instance(), [[1.9]])
+
+    assert result.is_feasible is False
+    assert "non_integer_customer:1.9" in result.errors
+    assert result.total_cost == 0.0
 
 
 def test_compute_gap_uses_relative_reference_cost():

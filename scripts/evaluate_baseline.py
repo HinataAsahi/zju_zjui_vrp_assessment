@@ -22,6 +22,8 @@ def evaluate_instances(
     instances: Sequence[CVRPInstance],
     limit: int | None = None,
 ) -> EvaluationSummary:
+    if limit is not None and limit < 0:
+        raise ValueError("limit must be non-negative")
     selected = list(instances[:limit]) if limit is not None else list(instances)
     routes_by_instance = []
     inference_times = []

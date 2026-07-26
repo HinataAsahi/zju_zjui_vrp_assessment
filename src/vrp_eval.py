@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from numbers import Integral
 from statistics import mean
-from typing import Sequence
+from typing import Any, Sequence
 
 from src.vrp_io import CVRPInstance
 
@@ -33,20 +34,31 @@ def euclidean(a: tuple[float, float], b: tuple[float, float]) -> float:
     return math.hypot(a[0] - b[0], a[1] - b[1])
 
 
-def _customer_point(instance: CVRPInstance, customer_id: int) -> tuple[float, float]:
+def _as_customer_id(instance: CVRPInstance, value: Any) -> int:
+    if not isinstance(value, Integral) or isinstance(value, bool):
+        raise TypeError("route customer IDs should be positive 1-based integers")
+    customer_id = int(value)
+    if customer_id < 1 or customer_id > instance.customer_count:
+        raise ValueError("route customer IDs should be positive 1-based integers")
+    return customer_id
+
+
+def _customer_point(instance: CVRPInstance, customer_id: Any) -> tuple[float, float]:
+    customer_id = _as_customer_id(instance, customer_id)
     return instance.loc[customer_id - 1]
 
 
 def compute_route_cost(instance: CVRPInstance, route: Sequence[int]) -> float:
     if not route:
         return 0.0
-    total = euclidean(instance.depot, _customer_point(instance, int(route[0])))
-    for prev_customer, next_customer in zip(route, route[1:]):
+    customer_ids = [_as_customer_id(instance, customer) for customer in route]
+    total = euclidean(instance.depot, _customer_point(instance, customer_ids[0]))
+    for prev_customer, next_customer in zip(customer_ids, customer_ids[1:]):
         total += euclidean(
-            _customer_point(instance, int(prev_customer)),
-            _customer_point(instance, int(next_customer)),
+            _customer_point(instance, prev_customer),
+            _customer_point(instance, next_customer),
         )
-    total += euclidean(_customer_point(instance, int(route[-1])), instance.depot)
+    total += euclidean(_customer_point(instance, customer_ids[-1]), instance.depot)
     return total
 
 

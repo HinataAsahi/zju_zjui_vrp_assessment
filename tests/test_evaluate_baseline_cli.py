@@ -4,8 +4,18 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from scripts.evaluate_baseline import evaluate_instances  # noqa: E402
+
+
+def test_evaluate_instances_rejects_negative_limit():
+    with pytest.raises(ValueError, match="limit must be non-negative"):
+        evaluate_instances([], limit=-1)
 
 
 def test_evaluate_baseline_cli_prints_summary_json(tmp_path):

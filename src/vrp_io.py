@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import pickle
 from dataclasses import dataclass
+from numbers import Integral
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -65,10 +66,46 @@ def _as_demands(values: Any) -> tuple[float, ...]:
     return tuple(_as_float(item) for item in _as_sequence(values))
 
 
-def _as_routes(values: Any) -> tuple[Route, ...]:
+def _as_customer_id(
+    value: Any,
+    *,
+    instance_id: int,
+    customer_count: int | None = None,
+) -> int:
+    if not isinstance(value, Integral) or isinstance(value, bool):
+        raise TypeError(
+            f"instance {instance_id} route customer IDs should be positive "
+            "1-based integers"
+        )
+    customer_id = int(value)
+    if customer_id <= 0 or (
+        customer_count is not None and customer_id > customer_count
+    ):
+        raise ValueError(
+            f"instance {instance_id} route customer IDs should be positive "
+            "1-based integers within the customer range"
+        )
+    return customer_id
+
+
+def _as_routes(
+    values: Any,
+    *,
+    instance_id: int,
+    customer_count: int | None = None,
+) -> tuple[Route, ...]:
     routes: list[Route] = []
     for route in _as_sequence(values):
-        routes.append(tuple(int(customer) for customer in _as_sequence(route)))
+        routes.append(
+            tuple(
+                _as_customer_id(
+                    customer,
+                    instance_id=instance_id,
+                    customer_count=customer_count,
+                )
+                for customer in _as_sequence(route)
+            )
+        )
     return tuple(routes)
 
 
@@ -90,7 +127,11 @@ def normalize_instance(instance_id: int, raw: tuple[Any, ...]) -> CVRPInstance:
     reference_routes = None
     reference_cost = None
     if len(raw) == 6:
-        reference_routes = _as_routes(raw[4])
+        reference_routes = _as_routes(
+            raw[4],
+            instance_id=instance_id,
+            customer_count=len(loc_points),
+        )
         reference_cost = _as_float(raw[5])
 
     return CVRPInstance(
