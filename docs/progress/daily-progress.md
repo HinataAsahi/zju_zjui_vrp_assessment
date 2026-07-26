@@ -9,6 +9,7 @@
 - baseline solver 规格已审核通过。
 - 生成并执行 baseline implementation plan。
 - 实现 CPU 最近邻 baseline、官方 `solve.py`、评估脚本、测试和 README。
+- 完整验证集 baseline 评估完成：1000/1000 可行，平均 gap 约 31.89%。
 
 ### 状态与下一步
 
