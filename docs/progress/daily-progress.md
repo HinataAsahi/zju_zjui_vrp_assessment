@@ -10,11 +10,12 @@
 - 生成并执行 baseline implementation plan。
 - 实现 CPU 最近邻 baseline、官方 `solve.py`、评估脚本、测试和 README。
 - 完整验证集 baseline 评估完成：1000/1000 可行，平均 gap 约 31.89%。
+- baseline 相关提交已合并到 `main` 并推送到 GitHub。
 
 ### 状态与下一步
 
 - 第一版可提交 baseline 已完成本地验证。
-- 下一阶段可 review baseline 结果，并设计 2-opt 改进。
+- 明天继续 2-opt 改进设计，优先考虑只做 route 内 2-opt。
 
 ## 2026-07-25
 
