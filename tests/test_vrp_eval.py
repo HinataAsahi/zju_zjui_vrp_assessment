@@ -1,6 +1,8 @@
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
@@ -93,3 +95,13 @@ def test_summarize_results_reports_average_metrics():
     assert summary.average_inference_time == 0.02
     assert summary.average_cost > 0.0
     assert summary.average_gap is not None
+
+
+def test_summarize_results_rejects_mismatched_routes():
+    with pytest.raises(ValueError, match="instances and routes_by_instance"):
+        summarize_results([make_instance()], [])
+
+
+def test_summarize_results_rejects_mismatched_inference_times():
+    with pytest.raises(ValueError, match="inference_times"):
+        summarize_results([make_instance()], [[[1, 2], [3]]], inference_times=[])

@@ -123,6 +123,13 @@ def summarize_results(
     routes_by_instance: Sequence[Sequence[Sequence[int]]],
     inference_times: Sequence[float] | None = None,
 ) -> EvaluationSummary:
+    if len(instances) != len(routes_by_instance):
+        raise ValueError(
+            "instances and routes_by_instance must have the same length"
+        )
+    if inference_times is not None and len(inference_times) != len(instances):
+        raise ValueError("inference_times must have the same length as instances")
+
     validations = [
         validate_solution(instance, routes)
         for instance, routes in zip(instances, routes_by_instance)
