@@ -11,8 +11,11 @@ VRP_project/
 # Local experiment outputs
 outputs/
 predictions.json
+artifacts/
 
 # Trained checkpoints can be large; add final submission artifacts explicitly.
 checkpoints/
+models/
 *.pt
 *.pth
+*.ckpt

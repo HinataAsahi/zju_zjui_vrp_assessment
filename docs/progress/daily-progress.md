@@ -6,13 +6,14 @@
 
 ### 今日进展
 
-- baseline solver 设计规格已审核通过。
-- 生成中文 implementation plan，明确 I/O、评估、最近邻 baseline、`solve.py`、评估脚本和 README 的实现任务。
+- baseline solver 规格已审核通过。
+- 生成并执行 baseline implementation plan。
+- 实现 CPU 最近邻 baseline、官方 `solve.py`、评估脚本、测试和 README。
 
 ### 状态与下一步
 
-- 尚未开始实现 baseline 代码。
-- 下一步选择执行方式后，按计划进入 TDD 实现阶段。
+- 第一版可提交 baseline 已完成本地验证。
+- 下一阶段可 review baseline 结果，并设计 2-opt 改进。
 
 ## 2026-07-25
 
