@@ -1,8 +1,12 @@
 .firecrawl/
+.worktrees/
 __pycache__/
 *.py[cod]
 .pytest_cache/
 .mypy_cache/
+
+# Local raw data
+VRP_project/
 
 # Local experiment outputs
 outputs/
