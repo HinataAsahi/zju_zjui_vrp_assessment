@@ -2,6 +2,18 @@
 
 本文件用于按日期简短记录 ZJU/ZJUI VRP assessment 项目的推进情况。
 
+## 2026-07-26
+
+### 今日进展
+
+- baseline solver 设计规格已审核通过。
+- 生成中文 implementation plan，明确 I/O、评估、最近邻 baseline、`solve.py`、评估脚本和 README 的实现任务。
+
+### 状态与下一步
+
+- 尚未开始实现 baseline 代码。
+- 下一步选择执行方式后，按计划进入 TDD 实现阶段。
+
 ## 2026-07-25
 
 ### 今日进展
