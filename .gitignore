@@ -1,5 +1,6 @@
 .firecrawl/
 .worktrees/
+.superpowers/sdd/
 __pycache__/
 *.py[cod]
 .pytest_cache/
