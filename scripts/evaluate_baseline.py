@@ -37,7 +37,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Evaluate nearest neighbor baseline.")
     parser.add_argument("--input", required=True, help="Input labeled .pkl file path.")
     parser.add_argument("--limit", type=int, default=None, help="Optional instance limit.")
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if args.limit is not None and args.limit < 0:
+        parser.error("limit must be non-negative")
+    return args
 
 
 def main(argv: list[str] | None = None) -> int:
