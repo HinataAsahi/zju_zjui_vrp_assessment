@@ -5,14 +5,18 @@ rules when working in this repository.
 
 ## Skill Workflow
 
-- Use `superpowers:brainstorming` before starting a new independent project
-  phase, such as designing the baseline, designing `solve.py`, choosing a model
-  strategy, or structuring the final report or presentation.
-- Do not restart a full `brainstorming` workflow for simple explanations,
-  status updates, already-approved small follow-up steps, pure reading, or git
-  commit/push operations.
-- If the project direction changes materially, or a new independent objective is
-  added, start a new `brainstorming` workflow for that objective.
+- Do not invoke the full brainstorming skill for clear, localized changes,
+  including bug fixes, algorithmic enhancements, tests, configuration changes,
+  and modifications confined to one or two modules.
+- For these tasks:
+  1. inspect the relevant implementation;
+  2. briefly state material assumptions and the intended approach;
+  3. implement directly;
+  4. add or update tests;
+  5. run relevant verification.
+- Use the full brainstorming skill only when the user explicitly requests it,
+  or when the task involves a new architecture, multiple unresolved product
+  decisions, or changes that are expensive to reverse.
 - After a design is approved and work is ready to move into implementation,
   invoke `superpowers:writing-plans` to create an implementation plan.
 - Use `superpowers:test-driven-development` when implementing new code or a
