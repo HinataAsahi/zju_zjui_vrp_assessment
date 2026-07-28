@@ -164,17 +164,27 @@ python3 scripts/evaluate_baseline.py --input VRP_project/VRPData/validation_data
 | instance_count | 1000 |
 | feasible_count | 1000 |
 | feasibility_rate | 1.0 |
-| average_cost | 11.519231481331843 |
-| average_gap | 0.0886829417106512 |
-| average_inference_time | 0.0912746598602098 |
+| average_cost | 11.513862926474488 |
+| average_gap | 0.08817281823708832 |
+| average_inference_time | 0.08248868217083509 |
 
 ### Public Check Timing
 
 ```bash
-/usr/bin/time -f "elapsed_seconds=%e" python3 solve.py --input VRP_project/VRPData/check_data_to_students.pkl --output outputs/predictions_limited_swap.json --method nearest_2opt_relocate_limited_swap --device cuda:0 --seed 2026
+/usr/bin/time -f "elapsed_seconds=%e" python3 solve.py --input VRP_project/VRPData/check_data_to_students.pkl --output outputs/predictions_limited_swap_5_2.json --method nearest_2opt_relocate_limited_swap --device cuda:0 --seed 2026
 ```
 
-- `elapsed_seconds`: 144.29. The approximately 180-second target was met.
-- Swap budget: CVRP-50 uses up to 4 swap passes; CVRP-100 uses up to 2 swap passes. The method runs after `nearest_2opt_relocate_limited`.
-- The validation result is feasible for all 1000 instances. Its `average_cost` improves from the current default `nearest_2opt_relocate_limited` value `11.675451253965944` to `11.519231481331843`.
-- Default status: promoted to the default CPU submission method after this evaluation because it improves validation quality while keeping the public check under the target timing.
+- `elapsed_seconds`: 135.13. The approximately 180-second target was met.
+- Swap budget: CVRP-50 uses up to 5 swap passes; CVRP-100 uses up to 2 swap passes. The method runs after `nearest_2opt_relocate_limited`.
+- Tuning comparison:
+
+| Swap pass budget | Validation average_cost | Validation average_gap | Validation average_inference_time | Public check elapsed_seconds | Decision |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `4/2` | 11.519231481331843 | 0.0886829417106512 | 0.0912746598602098 | 144.29 | Previous default. |
+| `5/2` | 11.513862926474488 | 0.08817281823708832 | 0.08248868217083509 | 135.13 | Kept as the tuned default. |
+| `4/3` | 11.519231481331843 | 0.0886829417106512 | 0.08032113239067257 | 150.05 | No validation quality gain over `4/2`. |
+| `3/2` | 11.528272980024548 | 0.08954072031977317 | 0.08362124218912505 | 138.06 | Faster than `4/2` in this run, but quality loss is not worth it. |
+
+- Formal default `outputs/predictions.json` was regenerated with the `5/2` budget in `148.00` seconds and passed a local feasibility check for all 1500 public-check instances.
+- The validation result is feasible for all 1000 instances. Its `average_cost` improves from the previous default `4/2` value `11.519231481331843` to `11.513862926474488`.
+- Default status: `5/2` is the tuned default CPU submission method.

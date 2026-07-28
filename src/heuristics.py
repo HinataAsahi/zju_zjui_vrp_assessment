@@ -547,7 +547,7 @@ def relocate_candidate_route_limit(customer_count: int) -> int:
 
 def swap_limited_passes(customer_count: int) -> int:
     if customer_count <= 50:
-        return 4
+        return 5
     return 2
 
 

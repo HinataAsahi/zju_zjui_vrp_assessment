@@ -468,8 +468,8 @@ def test_improve_routes_swap_best_skips_search_when_max_passes_is_zero():
 
 
 def test_swap_limited_passes_uses_cvrp50_budget():
-    assert swap_limited_passes(1) == 4
-    assert swap_limited_passes(50) == 4
+    assert swap_limited_passes(1) == 5
+    assert swap_limited_passes(50) == 5
 
 
 def test_swap_limited_passes_uses_cvrp100_budget():
@@ -479,7 +479,7 @@ def test_swap_limited_passes_uses_cvrp100_budget():
 
 @pytest.mark.parametrize(
     ("customer_count", "expected_passes"),
-    ((50, 4), (51, 2), (100, 2)),
+    ((50, 5), (51, 2), (100, 2)),
 )
 def test_solve_nearest_neighbor_2opt_relocate_limited_swap_forwards_budget(
     monkeypatch, customer_count, expected_passes

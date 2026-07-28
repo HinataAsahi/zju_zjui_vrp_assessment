@@ -55,6 +55,6 @@ python3 -m pytest tests -v
 
 ## Roadmap
 
-- Current: `nearest_2opt_relocate_limited_swap` is the default CPU submission method.
-- Next: optional parameter tuning for limited swap, or begin report/presentation preparation.
+- Current: `nearest_2opt_relocate_limited_swap` is the default CPU submission method with a tuned `5/2` swap-pass budget.
+- Next: begin report/presentation preparation, with optional extra tuning only if time remains.
 - Later: optional AI training on a CUDA machine such as the RTX 4060 laptop.
