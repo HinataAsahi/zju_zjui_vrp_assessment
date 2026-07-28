@@ -43,6 +43,24 @@ def test_evaluate_instances_accepts_nearest_2opt_method():
     assert summary.average_cost > 0.0
 
 
+def test_evaluate_instances_accepts_nearest_method():
+    instance = CVRPInstance(
+        instance_id=0,
+        depot=(0.0, 0.0),
+        loc=((1.0, 0.0), (0.0, 1.0)),
+        demand=(1.0, 1.0),
+        capacity=2.0,
+        reference_cost=4.0,
+    )
+
+    summary = evaluate_instances([instance], method="nearest")
+
+    assert summary.instance_count == 1
+    assert summary.feasible_count == 1
+    assert summary.feasibility_rate == 1.0
+    assert summary.average_cost > 0.0
+
+
 def test_evaluate_baseline_cli_prints_summary_json(tmp_path):
     input_path = tmp_path / "validation.pkl"
     raw_instances = [

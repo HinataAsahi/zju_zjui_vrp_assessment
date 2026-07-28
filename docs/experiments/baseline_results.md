@@ -5,7 +5,7 @@
 ### Command
 
 ```bash
-python3 scripts/evaluate_baseline.py --input VRP_project/VRPData/validation_data.pkl
+python3 scripts/evaluate_baseline.py --input VRP_project/VRPData/validation_data.pkl --method nearest
 ```
 
 ### Dataset
