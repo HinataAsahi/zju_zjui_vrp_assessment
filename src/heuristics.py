@@ -364,8 +364,8 @@ def relocate_limited_passes(customer_count: int) -> int:
 
 def relocate_candidate_route_limit(customer_count: int) -> int:
     if customer_count <= 50:
-        return 4
-    return 3
+        return 2
+    return 2
 
 
 def solve_nearest_neighbor_2opt(

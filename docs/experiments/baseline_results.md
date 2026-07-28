@@ -125,17 +125,18 @@ python3 scripts/evaluate_baseline.py --input VRP_project/VRPData/validation_data
 | instance_count | 1000 |
 | feasible_count | 1000 |
 | feasibility_rate | 1.0 |
-| average_cost | 11.675216058546207 |
-| average_gap | 0.1035842323611632 |
-| average_inference_time | 0.0588456712206098 |
+| average_cost | 11.677200534322004 |
+| average_gap | 0.10377228851455313 |
+| average_inference_time | 0.052491096285695676 |
 
 ### Public Check Timing
 
 ```bash
-/usr/bin/time -f "elapsed_seconds=%e" python3 solve.py --input VRP_project/VRPData/check_data_to_students.pkl --output outputs/predictions_candidate_limited.json --method nearest_2opt_relocate_candidate_limited --device cuda:0 --seed 2026
+/usr/bin/time -f "elapsed_seconds=%e" python3 solve.py --input VRP_project/VRPData/check_data_to_students.pkl --output outputs/predictions_candidate_limited_2_2.json --method nearest_2opt_relocate_candidate_limited --device cuda:0 --seed 2026
 ```
 
-- `elapsed_seconds`: 82.10. The approximately 180-second target was met.
-- Candidate budget: CVRP-50 uses up to 4 candidate target routes per moved customer; CVRP-100 uses up to 3. Relocate pass budget remains 8 for CVRP-50 and 3 for CVRP-100.
-- The validation result is feasible for all 1000 instances, and its `average_cost` `11.675216058546207` is slightly lower than the current default `nearest_2opt_relocate_limited` validation cost `11.675451253965944`.
-- The public check timing is slower than the latest current-default run (`73.85` seconds), so the default remains `nearest_2opt_relocate_limited` unless further tuning produces a clearer benefit.
+- `elapsed_seconds`: 63.43. The approximately 180-second target was met.
+- Candidate budget: CVRP-50 uses up to 2 candidate target routes per moved customer; CVRP-100 also uses up to 2. Relocate pass budget remains 8 for CVRP-50 and 3 for CVRP-100.
+- Tuning note: `3/2` was also tested; it kept feasibility but had validation `average_cost=11.67604868544792`, worse than the original `4/3` candidate-limited result and not enough speed evidence to keep.
+- The `2/2` validation result is feasible for all 1000 instances. Its `average_cost` `11.677200534322004` is slightly worse than the current default `nearest_2opt_relocate_limited` validation cost `11.675451253965944`, but its public check timing is faster than the latest current-default run (`73.85` seconds).
+- Default status: keep `nearest_2opt_relocate_limited` for now until the speed-quality tradeoff is explicitly accepted.

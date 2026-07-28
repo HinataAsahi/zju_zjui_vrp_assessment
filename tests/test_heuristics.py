@@ -269,13 +269,13 @@ def test_relocate_limited_passes_uses_cvrp100_budget():
 
 
 def test_relocate_candidate_route_limit_uses_cvrp50_budget():
-    assert relocate_candidate_route_limit(1) == 4
-    assert relocate_candidate_route_limit(50) == 4
+    assert relocate_candidate_route_limit(1) == 2
+    assert relocate_candidate_route_limit(50) == 2
 
 
 def test_relocate_candidate_route_limit_uses_cvrp100_budget():
-    assert relocate_candidate_route_limit(51) == 3
-    assert relocate_candidate_route_limit(100) == 3
+    assert relocate_candidate_route_limit(51) == 2
+    assert relocate_candidate_route_limit(100) == 2
 
 
 @pytest.mark.parametrize(
@@ -314,7 +314,7 @@ def test_solve_nearest_neighbor_2opt_relocate_limited_forwards_budget_not_hardco
 
 @pytest.mark.parametrize(
     ("customer_count", "expected_passes", "expected_candidate_routes"),
-    ((50, 8, 4), (51, 3, 3), (100, 3, 3)),
+    ((50, 8, 2), (51, 3, 2), (100, 3, 2)),
 )
 def test_solve_nearest_neighbor_2opt_relocate_candidate_limited_forwards_budgets(
     monkeypatch, customer_count, expected_passes, expected_candidate_routes
