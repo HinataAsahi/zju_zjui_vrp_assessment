@@ -42,7 +42,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="nearest_2opt",
         help=(
             "Solver method. nearest_2opt is the stable default; "
-            "nearest_2opt_relocate_best adds inter-route best relocate."
+            "nearest_2opt_relocate_best adds full inter-route best relocate; "
+            "nearest_2opt_relocate_limited uses fixed limited relocate budgets."
         ),
     )
     return parser.parse_args(argv)
