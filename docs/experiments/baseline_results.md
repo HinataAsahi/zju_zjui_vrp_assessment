@@ -137,6 +137,14 @@ python3 scripts/evaluate_baseline.py --input VRP_project/VRPData/validation_data
 
 - `elapsed_seconds`: 63.43. The approximately 180-second target was met.
 - Candidate budget: CVRP-50 uses up to 2 candidate target routes per moved customer; CVRP-100 also uses up to 2. Relocate pass budget remains 8 for CVRP-50 and 3 for CVRP-100.
-- Tuning note: `3/2` was also tested; it kept feasibility but had validation `average_cost=11.67604868544792`, worse than the original `4/3` candidate-limited result and not enough speed evidence to keep.
+- Tuning comparison:
+
+| Candidate route budget | Validation average_cost | Validation average_gap | Validation average_inference_time | Public check elapsed_seconds | Decision |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `4/3` | 11.675216058546207 | 0.1035842323611632 | 0.0588456712206098 | 82.10 | Best candidate-limited validation quality, but slower than `2/2`. |
+| `3/2` | 11.67604868544792 | 0.10367660350681505 | 0.05734983776875015 | 75.08 | Middle option; quality improvement over `2/2` is small for the added time. |
+| `2/2` | 11.677200534322004 | 0.10377228851455313 | 0.052491096285695676 | 63.43 | Kept as the tuned candidate-limited setting. |
+| `1/1` | 11.700284874443323 | 0.10589457351556121 | 0.03589411162603937 | 50.33 | Fastest tested option, but the validation quality loss is too large. |
+
 - The `2/2` validation result is feasible for all 1000 instances. Its `average_cost` `11.677200534322004` is slightly worse than the current default `nearest_2opt_relocate_limited` validation cost `11.675451253965944`, but its public check timing is faster than the latest current-default run (`73.85` seconds).
 - Default status: keep `nearest_2opt_relocate_limited` for now until the speed-quality tradeoff is explicitly accepted.
