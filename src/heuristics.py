@@ -9,11 +9,17 @@ from src.vrp_eval import compute_route_cost, compute_total_cost, euclidean
 from src.vrp_io import CVRPInstance
 
 
-SolverMethod = Literal["nearest", "nearest_2opt", "nearest_2opt_relocate_best"]
+SolverMethod = Literal[
+    "nearest",
+    "nearest_2opt",
+    "nearest_2opt_relocate_best",
+    "nearest_2opt_relocate_limited",
+]
 SOLVER_METHODS: tuple[SolverMethod, ...] = (
     "nearest",
     "nearest_2opt",
     "nearest_2opt_relocate_best",
+    "nearest_2opt_relocate_limited",
 )
 
 
@@ -289,6 +295,12 @@ def improve_routes_relocate_best(
     return best_routes
 
 
+def relocate_limited_passes(customer_count: int) -> int:
+    if customer_count <= 50:
+        return 8
+    return 3
+
+
 def solve_nearest_neighbor_2opt(
     instance: CVRPInstance,
     capacity_tol: float = 1e-9,
@@ -322,6 +334,19 @@ def solve_nearest_neighbor_2opt_relocate_best(
     )
 
 
+def solve_nearest_neighbor_2opt_relocate_limited(
+    instance: CVRPInstance,
+    capacity_tol: float = 1e-9,
+    improvement_tol: float = 1e-12,
+) -> tuple[tuple[int, ...], ...]:
+    return solve_nearest_neighbor_2opt_relocate_best(
+        instance,
+        capacity_tol=capacity_tol,
+        improvement_tol=improvement_tol,
+        max_relocate_passes=relocate_limited_passes(instance.customer_count),
+    )
+
+
 def solve_with_method(
     instance: CVRPInstance,
     method: str = "nearest_2opt",
@@ -338,6 +363,12 @@ def solve_with_method(
         )
     if method == "nearest_2opt_relocate_best":
         return solve_nearest_neighbor_2opt_relocate_best(
+            instance,
+            capacity_tol=capacity_tol,
+            improvement_tol=improvement_tol,
+        )
+    if method == "nearest_2opt_relocate_limited":
+        return solve_nearest_neighbor_2opt_relocate_limited(
             instance,
             capacity_tol=capacity_tol,
             improvement_tol=improvement_tol,

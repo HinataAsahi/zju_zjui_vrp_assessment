@@ -10,9 +10,11 @@ from src.heuristics import (  # noqa: E402
     improve_route_2opt,
     improve_routes_2opt,
     improve_routes_relocate_best,
+    relocate_limited_passes,
     solve_nearest_neighbor,
     solve_nearest_neighbor_2opt,
     solve_nearest_neighbor_2opt_relocate_best,
+    solve_nearest_neighbor_2opt_relocate_limited,
     solve_with_method,
 )
 from src.vrp_eval import compute_route_cost, compute_total_cost, validate_solution  # noqa: E402
@@ -212,5 +214,39 @@ def test_solve_with_method_accepts_nearest_2opt_relocate_best():
     instance = make_relocate_instance()
 
     routes = solve_with_method(instance, method="nearest_2opt_relocate_best")
+
+    assert validate_solution(instance, routes).is_feasible is True
+
+
+def test_relocate_limited_passes_uses_cvrp50_budget():
+    assert relocate_limited_passes(1) == 8
+    assert relocate_limited_passes(50) == 8
+
+
+def test_relocate_limited_passes_uses_cvrp100_budget():
+    assert relocate_limited_passes(51) == 3
+    assert relocate_limited_passes(100) == 3
+
+
+def test_solve_nearest_neighbor_2opt_relocate_limited_keeps_solution_feasible_and_not_worse():
+    instance = CVRPInstance(
+        instance_id=0,
+        depot=(0.0, 0.0),
+        loc=((1.0, 0.0), (2.0, 0.0), (10.0, 0.0), (11.0, 0.0)),
+        demand=(1.0, 1.0, 1.0, 1.0),
+        capacity=2.0,
+    )
+
+    base_routes = solve_nearest_neighbor_2opt(instance)
+    limited_routes = solve_nearest_neighbor_2opt_relocate_limited(instance)
+
+    assert validate_solution(instance, limited_routes).is_feasible is True
+    assert compute_total_cost(instance, limited_routes) <= compute_total_cost(instance, base_routes) + 1e-12
+
+
+def test_solve_with_method_accepts_nearest_2opt_relocate_limited():
+    instance = make_relocate_instance()
+
+    routes = solve_with_method(instance, method="nearest_2opt_relocate_limited")
 
     assert validate_solution(instance, routes).is_feasible is True
