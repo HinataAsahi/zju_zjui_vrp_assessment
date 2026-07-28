@@ -80,3 +80,32 @@ python3 scripts/evaluate_baseline.py --input VRP_project/VRPData/validation_data
 
 - The method remains feasible for all 1000 validation instances.
 - Its average cost `11.412079047307257` is lower than the previous `nearest_2opt` average cost `13.410121525149266`.
+
+## 2026-07-28: Nearest Neighbor + Route-Inner 2-opt + Limited Inter-Route Relocate
+
+### Command
+
+```bash
+python3 scripts/evaluate_baseline.py --input /home/a9191/university/master_china/zhejiang_ZJUI_2/VRP_project/VRP_project/VRPData/validation_data.pkl --method nearest_2opt_relocate_limited
+```
+
+### Results
+
+| Metric | Value |
+| --- | ---: |
+| instance_count | 1000 |
+| feasible_count | 1000 |
+| feasibility_rate | 1.0 |
+| average_cost | 11.675451253965944 |
+| average_gap | 0.10360446980377136 |
+| average_inference_time | 0.061557006634146094 |
+
+### Public Check Timing
+
+```bash
+/usr/bin/time -f "elapsed_seconds=%e" python3 solve.py --input /home/a9191/university/master_china/zhejiang_ZJUI_2/VRP_project/VRP_project/VRPData/check_data_to_students.pkl --output outputs/predictions_limited.json --method nearest_2opt_relocate_limited --device cuda:0 --seed 2026
+```
+
+- `elapsed_seconds`: 86.02. The approximately 180-second target was met.
+- The validation result is feasible for all 1000 instances, and its `average_cost` `11.675451253965944` is below the `nearest_2opt` average cost `13.410121525149266`.
+- Default-candidate gate: passed. `nearest_2opt_relocate_limited` is a valid default candidate, but the default remains `nearest_2opt` until the user confirms an upgrade.

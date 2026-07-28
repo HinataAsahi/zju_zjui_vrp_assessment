@@ -9,11 +9,15 @@
 - 审核通过 route 间 best relocate 设计，并生成 implementation plan。
 - 实现可选方法 `nearest_2opt_relocate_best`，默认方法仍保持 `nearest_2opt`。
 - 完成测试、官方 check 数据 smoke test 和完整验证集评估。
+- 审核通过 limited relocate 默认候选设计，目标公开集总耗时约 180 秒。
+- 实现可选方法 `nearest_2opt_relocate_limited`，默认方法暂时仍保持 `nearest_2opt`。
+- 完成 validation 评估和公开 check 数据计时，记录是否进入默认切换 gate。
 
 ### 状态与下一步
 
 - 当前默认方法为 `nearest_2opt`。
-- 根据 relocate 收益决定是否升级默认方法，或继续设计 route 间 swap。
+- limited 方法通过默认切换 gate：validation 1000/1000 可行，平均 cost 低于 `nearest_2opt`，公开 check 耗时 86.02 秒。
+- 若 limited 方法通过 gate，则等待确认是否升级默认方法。
 
 ## 2026-07-26
 
