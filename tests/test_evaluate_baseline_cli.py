@@ -10,6 +10,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+import scripts.evaluate_baseline as evaluate_baseline_module  # noqa: E402
 from scripts.evaluate_baseline import evaluate_instances, parse_args  # noqa: E402
 from src.vrp_io import CVRPInstance  # noqa: E402
 
@@ -19,10 +20,34 @@ def test_evaluate_instances_rejects_negative_limit():
         evaluate_instances([], limit=-1)
 
 
-def test_evaluate_parse_args_defaults_to_nearest_2opt():
+def test_evaluate_parse_args_defaults_to_nearest_2opt_relocate_limited():
     args = parse_args(["--input", "validation.pkl"])
 
-    assert args.method == "nearest_2opt"
+    assert args.method == "nearest_2opt_relocate_limited"
+
+
+def test_evaluate_instances_defaults_to_nearest_2opt_relocate_limited(monkeypatch):
+    instance = CVRPInstance(
+        instance_id=0,
+        depot=(0.0, 0.0),
+        loc=((1.0, 0.0), (2.0, 0.0)),
+        demand=(1.0, 1.0),
+        capacity=2.0,
+        reference_cost=4.0,
+    )
+    captured: dict[str, str] = {}
+
+    def fake_solve_with_method(instance, method):
+        captured["method"] = method
+        return ((1, 2),)
+
+    monkeypatch.setattr(evaluate_baseline_module, "solve_with_method", fake_solve_with_method)
+
+    summary = evaluate_instances([instance])
+
+    assert captured["method"] == "nearest_2opt_relocate_limited"
+    assert summary.instance_count == 1
+    assert summary.feasible_count == 1
 
 
 def test_evaluate_instances_accepts_nearest_2opt_method():

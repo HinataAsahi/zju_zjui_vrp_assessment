@@ -14,7 +14,7 @@ from src.vrp_io import CVRPInstance, SolutionRecord, load_instances, write_solut
 
 def solve_instances(
     instances: Sequence[CVRPInstance],
-    method: str = "nearest_2opt",
+    method: str = "nearest_2opt_relocate_limited",
 ) -> list[SolutionRecord]:
     solutions: list[SolutionRecord] = []
     for instance in instances:
@@ -39,9 +39,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--method",
         choices=SOLVER_METHODS,
-        default="nearest_2opt",
+        default="nearest_2opt_relocate_limited",
         help=(
-            "Solver method. nearest_2opt is the stable default; "
+            "Solver method. nearest_2opt_relocate_limited is the stable default; "
+            "nearest_2opt is the faster route-inner 2-opt baseline; "
             "nearest_2opt_relocate_best adds full inter-route best relocate; "
             "nearest_2opt_relocate_limited uses fixed limited relocate budgets."
         ),

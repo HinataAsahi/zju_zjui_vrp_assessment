@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+import solve as solve_module  # noqa: E402
 from solve import parse_args, solve_instances  # noqa: E402
 from src.vrp_eval import validate_solution  # noqa: E402
 from src.vrp_io import CVRPInstance, load_instances  # noqa: E402
@@ -53,7 +54,7 @@ def test_solve_cli_writes_valid_cvrp_v1_json(tmp_path):
     ]
 
 
-def test_parse_args_defaults_to_nearest_2opt():
+def test_parse_args_defaults_to_nearest_2opt_relocate_limited():
     args = parse_args(
         [
             "--input",
@@ -63,7 +64,29 @@ def test_parse_args_defaults_to_nearest_2opt():
         ]
     )
 
-    assert args.method == "nearest_2opt"
+    assert args.method == "nearest_2opt_relocate_limited"
+
+
+def test_solve_instances_defaults_to_nearest_2opt_relocate_limited(monkeypatch):
+    instance = CVRPInstance(
+        instance_id=3,
+        depot=(0.0, 0.0),
+        loc=((1.0, 0.0), (2.0, 0.0)),
+        demand=(1.0, 1.0),
+        capacity=2.0,
+    )
+    captured: dict[str, str] = {}
+
+    def fake_solve_with_method(instance, method):
+        captured["method"] = method
+        return ((1, 2),)
+
+    monkeypatch.setattr(solve_module, "solve_with_method", fake_solve_with_method)
+
+    solutions = solve_instances([instance])
+
+    assert captured["method"] == "nearest_2opt_relocate_limited"
+    assert validate_solution(instance, solutions[0].routes).is_feasible is True
 
 
 def test_solve_instances_accepts_nearest_2opt_method():

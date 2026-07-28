@@ -12,12 +12,13 @@
 - 审核通过 limited relocate 默认候选设计，目标公开集总耗时约 180 秒。
 - 实现可选方法 `nearest_2opt_relocate_limited`，默认方法暂时仍保持 `nearest_2opt`。
 - 完成 validation 评估和公开 check 数据计时，记录是否进入默认切换 gate。
+- 确认将 `nearest_2opt_relocate_limited` 升级为默认提交方法。
 
 ### 状态与下一步
 
-- 当前默认方法为 `nearest_2opt`。
+- 当前默认方法为 `nearest_2opt_relocate_limited`。
 - limited 方法通过默认切换 gate：validation 1000/1000 可行，平均 cost 低于 `nearest_2opt`，公开 check 耗时 76.35 秒。
-- limited 方法已通过 gate，等待确认是否升级默认方法。
+- 下一步按需评估 candidate-limited relocate 或 route 间 swap，前提是保持公开 check 时间预算。
 
 ## 2026-07-26
 
