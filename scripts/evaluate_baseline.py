@@ -37,14 +37,20 @@ def evaluate_instances(
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Evaluate nearest neighbor baseline.")
+    parser = argparse.ArgumentParser(
+        description="Evaluate nearest neighbor baseline.",
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
     parser.add_argument("--input", required=True, help="Input labeled .pkl file path.")
     parser.add_argument("--limit", type=int, default=None, help="Optional instance limit.")
     parser.add_argument(
         "--method",
         choices=SOLVER_METHODS,
         default="nearest_2opt",
-        help="Solver method to evaluate.",
+        help=(
+            "Solver method to evaluate. Use nearest_2opt_relocate_best "
+            "to evaluate inter-route best relocate."
+        ),
     )
     args = parser.parse_args(argv)
     if args.limit is not None and args.limit < 0:
