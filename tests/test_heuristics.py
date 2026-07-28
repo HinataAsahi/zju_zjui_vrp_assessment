@@ -9,8 +9,10 @@ sys.path.insert(0, str(ROOT))
 from src.heuristics import (  # noqa: E402
     improve_route_2opt,
     improve_routes_2opt,
+    improve_routes_relocate_best,
     solve_nearest_neighbor,
     solve_nearest_neighbor_2opt,
+    solve_nearest_neighbor_2opt_relocate_best,
     solve_with_method,
 )
 from src.vrp_eval import compute_route_cost, compute_total_cost, validate_solution  # noqa: E402
@@ -132,3 +134,83 @@ def test_solve_with_method_rejects_unknown_method():
 
     with pytest.raises(ValueError, match="unknown solver method"):
         solve_with_method(instance, method="not_a_method")
+
+
+def make_relocate_instance(
+    demand: tuple[float, ...] = (1.0, 1.0, 1.0),
+    capacity: float = 3.0,
+) -> CVRPInstance:
+    return CVRPInstance(
+        instance_id=0,
+        depot=(0.0, 0.0),
+        loc=((1.0, 0.0), (10.0, 0.0), (11.0, 0.0)),
+        demand=demand,
+        capacity=capacity,
+    )
+
+
+def test_improve_routes_relocate_best_moves_customer_between_routes_to_reduce_cost():
+    instance = make_relocate_instance()
+    routes = ((1, 2), (3,))
+
+    improved = improve_routes_relocate_best(instance, routes)
+
+    assert sorted(customer for route in improved for customer in route) == [1, 2, 3]
+    assert compute_total_cost(instance, improved) < compute_total_cost(instance, routes)
+    assert validate_solution(instance, improved).is_feasible is True
+
+
+def test_improve_routes_relocate_best_skips_moves_that_exceed_target_capacity():
+    instance = make_relocate_instance(
+        demand=(1.0, 0.5, 1.5),
+        capacity=1.5,
+    )
+    routes = ((1, 2), (3,))
+
+    improved = improve_routes_relocate_best(instance, routes)
+
+    assert improved == routes
+    assert validate_solution(instance, improved).is_feasible is True
+
+
+def test_improve_routes_relocate_best_removes_empty_source_route():
+    instance = make_relocate_instance()
+    routes = ((2,), (1, 3))
+
+    improved = improve_routes_relocate_best(instance, routes)
+
+    assert len(improved) == 1
+    assert sorted(improved[0]) == [1, 2, 3]
+    assert compute_total_cost(instance, improved) < compute_total_cost(instance, routes)
+    assert validate_solution(instance, improved).is_feasible is True
+
+
+def test_improve_routes_relocate_best_rejects_negative_max_passes():
+    instance = make_relocate_instance()
+
+    with pytest.raises(ValueError, match="max_passes must be non-negative"):
+        improve_routes_relocate_best(instance, ((1, 2), (3,)), max_passes=-1)
+
+
+def test_solve_nearest_neighbor_2opt_relocate_best_keeps_solution_feasible_and_not_worse():
+    instance = CVRPInstance(
+        instance_id=0,
+        depot=(0.0, 0.0),
+        loc=((1.0, 0.0), (2.0, 0.0), (10.0, 0.0), (11.0, 0.0)),
+        demand=(1.0, 1.0, 1.0, 1.0),
+        capacity=2.0,
+    )
+
+    base_routes = solve_nearest_neighbor_2opt(instance)
+    improved_routes = solve_nearest_neighbor_2opt_relocate_best(instance)
+
+    assert validate_solution(instance, improved_routes).is_feasible is True
+    assert compute_total_cost(instance, improved_routes) <= compute_total_cost(instance, base_routes) + 1e-12
+
+
+def test_solve_with_method_accepts_nearest_2opt_relocate_best():
+    instance = make_relocate_instance()
+
+    routes = solve_with_method(instance, method="nearest_2opt_relocate_best")
+
+    assert validate_solution(instance, routes).is_feasible is True

@@ -2,14 +2,29 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Literal, Sequence
 
-from src.vrp_eval import euclidean
+from src.vrp_eval import compute_route_cost, compute_total_cost, euclidean
 from src.vrp_io import CVRPInstance
 
 
-SolverMethod = Literal["nearest", "nearest_2opt"]
-SOLVER_METHODS: tuple[SolverMethod, ...] = ("nearest", "nearest_2opt")
+SolverMethod = Literal["nearest", "nearest_2opt", "nearest_2opt_relocate_best"]
+SOLVER_METHODS: tuple[SolverMethod, ...] = (
+    "nearest",
+    "nearest_2opt",
+    "nearest_2opt_relocate_best",
+)
+
+
+@dataclass(frozen=True)
+class _RelocateMove:
+    cost_delta: float
+    source_route_index: int
+    target_route_index: int
+    source_customer_position: int
+    target_insert_position: int
+    customer_id: int
 
 
 def solve_nearest_neighbor(
@@ -125,6 +140,155 @@ def improve_routes_2opt(
     )
 
 
+def _route_load(instance: CVRPInstance, route: Sequence[int]) -> float:
+    return sum(instance.demand[customer_id - 1] for customer_id in route)
+
+
+def _find_best_relocate_move(
+    instance: CVRPInstance,
+    routes: tuple[tuple[int, ...], ...],
+    route_loads: tuple[float, ...],
+    capacity_tol: float,
+    improvement_tol: float,
+) -> _RelocateMove | None:
+    best_move: _RelocateMove | None = None
+
+    for source_route_index, source_route in enumerate(routes):
+        source_cost = compute_route_cost(instance, source_route)
+        for source_customer_position, customer_id in enumerate(source_route):
+            customer_demand = instance.demand[customer_id - 1]
+            new_source_route = (
+                source_route[:source_customer_position]
+                + source_route[source_customer_position + 1 :]
+            )
+            new_source_cost = compute_route_cost(instance, new_source_route)
+
+            for target_route_index, target_route in enumerate(routes):
+                if source_route_index == target_route_index:
+                    continue
+                if (
+                    route_loads[target_route_index] + customer_demand
+                    > instance.capacity + capacity_tol
+                ):
+                    continue
+
+                target_cost = compute_route_cost(instance, target_route)
+                current_cost = source_cost + target_cost
+                for target_insert_position in range(len(target_route) + 1):
+                    new_target_route = (
+                        target_route[:target_insert_position]
+                        + (customer_id,)
+                        + target_route[target_insert_position:]
+                    )
+                    candidate_cost = new_source_cost + compute_route_cost(
+                        instance,
+                        new_target_route,
+                    )
+                    if candidate_cost + improvement_tol >= current_cost:
+                        continue
+
+                    move = _RelocateMove(
+                        cost_delta=candidate_cost - current_cost,
+                        source_route_index=source_route_index,
+                        target_route_index=target_route_index,
+                        source_customer_position=source_customer_position,
+                        target_insert_position=target_insert_position,
+                        customer_id=customer_id,
+                    )
+                    if best_move is None or (
+                        move.cost_delta,
+                        move.source_route_index,
+                        move.target_route_index,
+                        move.source_customer_position,
+                        move.target_insert_position,
+                        move.customer_id,
+                    ) < (
+                        best_move.cost_delta,
+                        best_move.source_route_index,
+                        best_move.target_route_index,
+                        best_move.source_customer_position,
+                        best_move.target_insert_position,
+                        best_move.customer_id,
+                    ):
+                        best_move = move
+
+    return best_move
+
+
+def _apply_relocate_move(
+    instance: CVRPInstance,
+    routes: tuple[tuple[int, ...], ...],
+    move: _RelocateMove,
+    improvement_tol: float,
+) -> tuple[tuple[int, ...], ...]:
+    mutable_routes = [list(route) for route in routes]
+    customer_id = mutable_routes[move.source_route_index].pop(
+        move.source_customer_position
+    )
+    if customer_id != move.customer_id:
+        raise RuntimeError("relocate move customer mismatch")
+
+    mutable_routes[move.target_route_index].insert(
+        move.target_insert_position,
+        customer_id,
+    )
+
+    affected_route_indexes = {move.source_route_index, move.target_route_index}
+    improved_routes: list[tuple[int, ...]] = []
+    for route_index, route in enumerate(mutable_routes):
+        if not route:
+            continue
+        route_tuple = tuple(route)
+        if route_index in affected_route_indexes:
+            route_tuple = improve_route_2opt(
+                instance,
+                route_tuple,
+                improvement_tol=improvement_tol,
+            )
+        improved_routes.append(route_tuple)
+    return tuple(improved_routes)
+
+
+def improve_routes_relocate_best(
+    instance: CVRPInstance,
+    routes: Sequence[Sequence[int]],
+    capacity_tol: float = 1e-9,
+    improvement_tol: float = 1e-12,
+    max_passes: int = 50,
+) -> tuple[tuple[int, ...], ...]:
+    if max_passes < 0:
+        raise ValueError("max_passes must be non-negative")
+
+    best_routes = tuple(tuple(route) for route in routes)
+    for _ in range(max_passes):
+        route_loads = tuple(_route_load(instance, route) for route in best_routes)
+        move = _find_best_relocate_move(
+            instance,
+            best_routes,
+            route_loads,
+            capacity_tol=capacity_tol,
+            improvement_tol=improvement_tol,
+        )
+        if move is None:
+            return best_routes
+
+        current_total_cost = compute_total_cost(instance, best_routes)
+        candidate_routes = _apply_relocate_move(
+            instance,
+            best_routes,
+            move,
+            improvement_tol=improvement_tol,
+        )
+        if (
+            compute_total_cost(instance, candidate_routes) + improvement_tol
+            >= current_total_cost
+        ):
+            return best_routes
+        best_routes = candidate_routes
+
+    return best_routes
+
+
 def solve_nearest_neighbor_2opt(
     instance: CVRPInstance,
     capacity_tol: float = 1e-9,
@@ -138,6 +302,26 @@ def solve_nearest_neighbor_2opt(
     )
 
 
+def solve_nearest_neighbor_2opt_relocate_best(
+    instance: CVRPInstance,
+    capacity_tol: float = 1e-9,
+    improvement_tol: float = 1e-12,
+    max_relocate_passes: int = 50,
+) -> tuple[tuple[int, ...], ...]:
+    routes = solve_nearest_neighbor_2opt(
+        instance,
+        capacity_tol=capacity_tol,
+        improvement_tol=improvement_tol,
+    )
+    return improve_routes_relocate_best(
+        instance,
+        routes,
+        capacity_tol=capacity_tol,
+        improvement_tol=improvement_tol,
+        max_passes=max_relocate_passes,
+    )
+
+
 def solve_with_method(
     instance: CVRPInstance,
     method: str = "nearest_2opt",
@@ -148,6 +332,12 @@ def solve_with_method(
         return solve_nearest_neighbor(instance, capacity_tol=capacity_tol)
     if method == "nearest_2opt":
         return solve_nearest_neighbor_2opt(
+            instance,
+            capacity_tol=capacity_tol,
+            improvement_tol=improvement_tol,
+        )
+    if method == "nearest_2opt_relocate_best":
+        return solve_nearest_neighbor_2opt_relocate_best(
             instance,
             capacity_tol=capacity_tol,
             improvement_tol=improvement_tol,
