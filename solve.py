@@ -7,15 +7,18 @@ import random
 import sys
 from typing import Sequence
 
-from src.heuristics import solve_nearest_neighbor
+from src.heuristics import SOLVER_METHODS, solve_with_method
 from src.vrp_eval import validate_solution
 from src.vrp_io import CVRPInstance, SolutionRecord, load_instances, write_solutions_json
 
 
-def solve_instances(instances: Sequence[CVRPInstance]) -> list[SolutionRecord]:
+def solve_instances(
+    instances: Sequence[CVRPInstance],
+    method: str = "nearest_2opt",
+) -> list[SolutionRecord]:
     solutions: list[SolutionRecord] = []
     for instance in instances:
-        routes = solve_nearest_neighbor(instance)
+        routes = solve_with_method(instance, method=method)
         validation = validate_solution(instance, routes)
         if not validation.is_feasible:
             joined_errors = ", ".join(validation.errors)
@@ -30,6 +33,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--output", required=True, help="Output JSON file path.")
     parser.add_argument("--device", default="cpu", help="Accepted for compatibility.")
     parser.add_argument("--seed", type=int, default=2026, help="Deterministic seed.")
+    parser.add_argument(
+        "--method",
+        choices=SOLVER_METHODS,
+        default="nearest_2opt",
+        help="Solver method: nearest_2opt uses nearest neighbor plus route-inner 2-opt.",
+    )
     return parser.parse_args(argv)
 
 
@@ -38,7 +47,7 @@ def main(argv: list[str] | None = None) -> int:
     random.seed(args.seed)
     try:
         instances = load_instances(args.input)
-        solutions = solve_instances(instances)
+        solutions = solve_instances(instances, method=args.method)
         write_solutions_json(args.output, solutions)
     except Exception as exc:
         print(f"solve.py failed: {exc}", file=sys.stderr)

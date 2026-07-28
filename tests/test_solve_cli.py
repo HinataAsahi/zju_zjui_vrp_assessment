@@ -6,6 +6,11 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from solve import parse_args, solve_instances  # noqa: E402
+from src.vrp_eval import validate_solution  # noqa: E402
+from src.vrp_io import CVRPInstance  # noqa: E402
 
 
 def test_solve_cli_writes_valid_cvrp_v1_json(tmp_path):
@@ -30,6 +35,8 @@ def test_solve_cli_writes_valid_cvrp_v1_json(tmp_path):
             "cuda:0",
             "--seed",
             "2026",
+            "--method",
+            "nearest",
         ],
         cwd=ROOT,
         text=True,
@@ -44,3 +51,59 @@ def test_solve_cli_writes_valid_cvrp_v1_json(tmp_path):
         {"instance_id": 0, "routes": [[1, 2], [3]]},
         {"instance_id": 1, "routes": [[1, 2]]},
     ]
+
+
+def test_parse_args_defaults_to_nearest_2opt():
+    args = parse_args(
+        [
+            "--input",
+            "input.pkl",
+            "--output",
+            "predictions.json",
+        ]
+    )
+
+    assert args.method == "nearest_2opt"
+
+
+def test_solve_instances_accepts_nearest_2opt_method():
+    instance = CVRPInstance(
+        instance_id=3,
+        depot=(0.0, 0.0),
+        loc=((1.0, 0.0), (0.0, 1.0), (1.0, 1.0)),
+        demand=(1.0, 1.0, 1.0),
+        capacity=3.0,
+    )
+
+    solutions = solve_instances([instance], method="nearest_2opt")
+
+    assert len(solutions) == 1
+    assert solutions[0].instance_id == 3
+    assert validate_solution(instance, solutions[0].routes).is_feasible is True
+
+
+def test_solve_cli_rejects_unknown_method(tmp_path):
+    input_path = tmp_path / "check.pkl"
+    output_path = tmp_path / "predictions.json"
+    with input_path.open("wb") as handle:
+        pickle.dump([], handle)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "solve.py"),
+            "--input",
+            str(input_path),
+            "--output",
+            str(output_path),
+            "--method",
+            "bad_method",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert "invalid choice" in result.stderr
