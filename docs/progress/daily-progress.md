@@ -6,14 +6,14 @@
 
 ### 今日进展
 
-- 审核通过 route 内 2-opt 设计，并生成 implementation plan。
-- 实现最近邻 + route 内 2-opt，并保留原始最近邻对照方法。
+- 审核通过 route 间 best relocate 设计，并生成 implementation plan。
+- 实现可选方法 `nearest_2opt_relocate_best`，默认方法仍保持 `nearest_2opt`。
 - 完成测试、官方 check 数据 smoke test 和完整验证集评估。
 
 ### 状态与下一步
 
 - 当前默认方法为 `nearest_2opt`。
-- 下一阶段根据收益决定是否设计 route 间 relocate/swap。
+- 根据 relocate 收益决定是否升级默认方法，或继续设计 route 间 swap。
 
 ## 2026-07-26
 
