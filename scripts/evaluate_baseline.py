@@ -13,7 +13,7 @@ from typing import Sequence
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.heuristics import solve_nearest_neighbor  # noqa: E402
+from src.heuristics import SOLVER_METHODS, solve_with_method  # noqa: E402
 from src.vrp_eval import EvaluationSummary, summarize_results  # noqa: E402
 from src.vrp_io import CVRPInstance, load_instances  # noqa: E402
 
@@ -21,6 +21,7 @@ from src.vrp_io import CVRPInstance, load_instances  # noqa: E402
 def evaluate_instances(
     instances: Sequence[CVRPInstance],
     limit: int | None = None,
+    method: str = "nearest_2opt",
 ) -> EvaluationSummary:
     if limit is not None and limit < 0:
         raise ValueError("limit must be non-negative")
@@ -29,7 +30,7 @@ def evaluate_instances(
     inference_times = []
     for instance in selected:
         start = time.perf_counter()
-        routes = solve_nearest_neighbor(instance)
+        routes = solve_with_method(instance, method=method)
         inference_times.append(time.perf_counter() - start)
         routes_by_instance.append(routes)
     return summarize_results(selected, routes_by_instance, inference_times)
@@ -39,6 +40,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Evaluate nearest neighbor baseline.")
     parser.add_argument("--input", required=True, help="Input labeled .pkl file path.")
     parser.add_argument("--limit", type=int, default=None, help="Optional instance limit.")
+    parser.add_argument(
+        "--method",
+        choices=SOLVER_METHODS,
+        default="nearest_2opt",
+        help="Solver method to evaluate.",
+    )
     args = parser.parse_args(argv)
     if args.limit is not None and args.limit < 0:
         parser.error("limit must be non-negative")
@@ -47,7 +54,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    summary = evaluate_instances(load_instances(args.input), args.limit)
+    summary = evaluate_instances(
+        load_instances(args.input),
+        limit=args.limit,
+        method=args.method,
+    )
     print(
         json.dumps(
             {
