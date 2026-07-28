@@ -69,12 +69,12 @@ python3 scripts/evaluate_baseline.py --input VRP_project/VRPData/validation_data
 
 | Metric | Value |
 | --- | ---: |
-| Instance count | 1000 |
-| Feasible count | 1000 |
-| Feasibility rate | 1.0 |
-| Average cost | 11.412079047307257 |
-| Average gap | 0.07837888104759934 |
-| Average inference time | 0.1047532973489142 |
+| instance_count | 1000 |
+| feasible_count | 1000 |
+| feasibility_rate | 1.0 |
+| average_cost | 11.412079047307257 |
+| average_gap | 0.07837888104759934 |
+| average_inference_time | 0.1047532973489142 |
 
 ### Notes
 
