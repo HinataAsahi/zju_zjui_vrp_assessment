@@ -10,7 +10,7 @@ sys.path.insert(0, str(ROOT))
 
 from solve import parse_args, solve_instances  # noqa: E402
 from src.vrp_eval import validate_solution  # noqa: E402
-from src.vrp_io import CVRPInstance  # noqa: E402
+from src.vrp_io import CVRPInstance, load_instances  # noqa: E402
 
 
 def test_solve_cli_writes_valid_cvrp_v1_json(tmp_path):
@@ -107,3 +107,59 @@ def test_solve_cli_rejects_unknown_method(tmp_path):
 
     assert result.returncode != 0
     assert "invalid choice" in result.stderr
+
+
+def test_solve_cli_accepts_nearest_2opt_relocate_best_method(tmp_path):
+    input_path = tmp_path / "check.pkl"
+    output_path = tmp_path / "predictions_relocate.json"
+    raw_instances = [
+        ([[0, 0]], [[1, 0], [10, 0], [11, 0]], [1, 1, 1], 3),
+    ]
+    with input_path.open("wb") as handle:
+        pickle.dump(raw_instances, handle)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "solve.py"),
+            "--input",
+            str(input_path),
+            "--output",
+            str(output_path),
+            "--method",
+            "nearest_2opt_relocate_best",
+            "--device",
+            "cuda:0",
+            "--seed",
+            "2026",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    instance = load_instances(input_path)[0]
+    payload = json.loads(output_path.read_text(encoding="utf-8"))
+    routes = tuple(tuple(route) for route in payload["solutions"][0]["routes"])
+    assert payload["format_version"] == "cvrp_v1"
+    assert payload["solutions"][0]["instance_id"] == 0
+    assert validate_solution(instance, routes).is_feasible is True
+
+
+def test_solve_cli_help_describes_relocate_method():
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "solve.py"),
+            "--help",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert "inter-route best relocate" in result.stdout

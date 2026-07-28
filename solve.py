@@ -28,7 +28,10 @@ def solve_instances(
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Solve CVRP instances.")
+    parser = argparse.ArgumentParser(
+        description="Solve CVRP instances.",
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
     parser.add_argument("--input", required=True, help="Input .pkl file path.")
     parser.add_argument("--output", required=True, help="Output JSON file path.")
     parser.add_argument("--device", default="cpu", help="Accepted for compatibility.")
@@ -37,7 +40,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--method",
         choices=SOLVER_METHODS,
         default="nearest_2opt",
-        help="Solver method: nearest_2opt uses nearest neighbor plus route-inner 2-opt.",
+        help=(
+            "Solver method. nearest_2opt is the stable default; "
+            "nearest_2opt_relocate_best adds inter-route best relocate."
+        ),
     )
     return parser.parse_args(argv)
 
