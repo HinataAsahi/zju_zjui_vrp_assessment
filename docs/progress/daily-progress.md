@@ -16,8 +16,8 @@
 ### 状态与下一步
 
 - 当前默认方法为 `nearest_2opt`。
-- limited 方法通过默认切换 gate：validation 1000/1000 可行，平均 cost 低于 `nearest_2opt`，公开 check 耗时 86.02 秒。
-- 若 limited 方法通过 gate，则等待确认是否升级默认方法。
+- limited 方法通过默认切换 gate：validation 1000/1000 可行，平均 cost 低于 `nearest_2opt`，公开 check 耗时 76.35 秒。
+- limited 方法已通过 gate，等待确认是否升级默认方法。
 
 ## 2026-07-26
 

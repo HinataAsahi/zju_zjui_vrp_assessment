@@ -6,6 +6,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+import src.heuristics as heuristics  # noqa: E402
 from src.heuristics import (  # noqa: E402
     improve_route_2opt,
     improve_routes_2opt,
@@ -226,6 +227,40 @@ def test_relocate_limited_passes_uses_cvrp50_budget():
 def test_relocate_limited_passes_uses_cvrp100_budget():
     assert relocate_limited_passes(51) == 3
     assert relocate_limited_passes(100) == 3
+
+
+@pytest.mark.parametrize(
+    ("customer_count", "expected_passes"),
+    ((50, 8), (51, 3), (100, 3)),
+)
+def test_solve_nearest_neighbor_2opt_relocate_limited_forwards_budget_not_hardcoded_50(
+    monkeypatch, customer_count, expected_passes
+):
+    """Catches a wrapper mutation that hardcodes max_relocate_passes=50."""
+    instance = CVRPInstance(
+        instance_id=0,
+        depot=(0.0, 0.0),
+        loc=tuple((float(customer_id), 0.0) for customer_id in range(1, customer_count + 1)),
+        demand=(1.0,) * customer_count,
+        capacity=float(customer_count),
+    )
+    captured: dict[str, int] = {}
+
+    def fake_solve_nearest_neighbor_2opt_relocate_best(
+        instance, capacity_tol, improvement_tol, max_relocate_passes
+    ):
+        captured["max_relocate_passes"] = max_relocate_passes
+        return ()
+
+    monkeypatch.setattr(
+        heuristics,
+        "solve_nearest_neighbor_2opt_relocate_best",
+        fake_solve_nearest_neighbor_2opt_relocate_best,
+    )
+
+    solve_nearest_neighbor_2opt_relocate_limited(instance)
+
+    assert captured["max_relocate_passes"] == expected_passes
 
 
 def test_solve_nearest_neighbor_2opt_relocate_limited_keeps_solution_feasible_and_not_worse():
