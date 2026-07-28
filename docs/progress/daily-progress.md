@@ -2,6 +2,19 @@
 
 本文件用于按日期简短记录 ZJU/ZJUI VRP assessment 项目的推进情况。
 
+## 2026-07-28
+
+### 今日进展
+
+- 审核通过 route 内 2-opt 设计，并生成 implementation plan。
+- 实现最近邻 + route 内 2-opt，并保留原始最近邻对照方法。
+- 完成测试、官方 check 数据 smoke test 和完整验证集评估。
+
+### 状态与下一步
+
+- 当前默认方法为 `nearest_2opt`。
+- 下一阶段根据收益决定是否设计 route 间 relocate/swap。
+
 ## 2026-07-26
 
 ### 今日进展
