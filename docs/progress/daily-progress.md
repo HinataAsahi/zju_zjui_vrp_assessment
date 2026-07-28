@@ -16,14 +16,15 @@
 - 尝试 `nearest_2opt_relocate_candidate_limited`：保留 8/3 轮数限制，并将候选 target route 数量调到 2/2。
 - 补测 candidate-limited 的 3/2 与 1/1 参数，确认 2/2 是目前较合适的速度-质量折中点。
 - 实现可选方法 `nearest_2opt_relocate_limited_swap`，在 limited relocate 后做有限轮 route 间 swap。
+- 确认将 `nearest_2opt_relocate_limited_swap` 升级为默认提交方法。
 
 ### 状态与下一步
 
-- 当前默认方法为 `nearest_2opt_relocate_limited`。
+- 当前默认方法为 `nearest_2opt_relocate_limited_swap`。
 - limited 方法通过默认切换 gate：validation 1000/1000 可行，平均 cost 低于 `nearest_2opt`，公开 check 耗时 76.35 秒。
 - candidate-limited 2/2 方法 validation 平均 cost 为 11.677200534322004，公开 check 耗时 63.43 秒；速度更好但质量略差，默认方法暂不切换。
 - candidate-limited 补测：3/2 公开 check 75.08 秒，1/1 公开 check 50.33 秒但 validation 平均 cost 退到 11.700284874443323。
-- limited-swap 方法 validation 平均 cost 为 11.519231481331843，公开 check 耗时 144.29 秒；质量明显更好且低于 180 秒目标，下一步可确认是否升为默认。
+- limited-swap 方法 validation 平均 cost 为 11.519231481331843，公开 check 耗时 144.29 秒；质量明显更好且低于 180 秒目标，已升为默认。
 
 ## 2026-07-26
 

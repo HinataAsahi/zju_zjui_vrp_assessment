@@ -20,13 +20,13 @@ def test_evaluate_instances_rejects_negative_limit():
         evaluate_instances([], limit=-1)
 
 
-def test_evaluate_parse_args_defaults_to_nearest_2opt_relocate_limited():
+def test_evaluate_parse_args_defaults_to_nearest_2opt_relocate_limited_swap():
     args = parse_args(["--input", "validation.pkl"])
 
-    assert args.method == "nearest_2opt_relocate_limited"
+    assert args.method == "nearest_2opt_relocate_limited_swap"
 
 
-def test_evaluate_instances_defaults_to_nearest_2opt_relocate_limited(monkeypatch):
+def test_evaluate_instances_defaults_to_nearest_2opt_relocate_limited_swap(monkeypatch):
     instance = CVRPInstance(
         instance_id=0,
         depot=(0.0, 0.0),
@@ -45,7 +45,7 @@ def test_evaluate_instances_defaults_to_nearest_2opt_relocate_limited(monkeypatc
 
     summary = evaluate_instances([instance])
 
-    assert captured["method"] == "nearest_2opt_relocate_limited"
+    assert captured["method"] == "nearest_2opt_relocate_limited_swap"
     assert summary.instance_count == 1
     assert summary.feasible_count == 1
 

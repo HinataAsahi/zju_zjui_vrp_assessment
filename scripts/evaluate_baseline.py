@@ -21,7 +21,7 @@ from src.vrp_io import CVRPInstance, load_instances  # noqa: E402
 def evaluate_instances(
     instances: Sequence[CVRPInstance],
     limit: int | None = None,
-    method: str = "nearest_2opt_relocate_limited",
+    method: str = "nearest_2opt_relocate_limited_swap",
 ) -> EvaluationSummary:
     if limit is not None and limit < 0:
         raise ValueError("limit must be non-negative")
@@ -46,10 +46,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--method",
         choices=SOLVER_METHODS,
-        default="nearest_2opt_relocate_limited",
+        default="nearest_2opt_relocate_limited_swap",
         help=(
-            "Solver method to evaluate. nearest_2opt_relocate_limited is "
-            "the stable default with fixed limited relocate; use "
+            "Solver method to evaluate. nearest_2opt_relocate_limited_swap is "
+            "the stable default with fixed limited relocate plus limited swap; use "
             "nearest_2opt_relocate_best to evaluate full inter-route best relocate; "
             "use nearest_2opt_relocate_candidate_limited to evaluate "
             "candidate-limited relocate; use nearest_2opt_relocate_limited_swap "

@@ -177,4 +177,4 @@ python3 scripts/evaluate_baseline.py --input VRP_project/VRPData/validation_data
 - `elapsed_seconds`: 144.29. The approximately 180-second target was met.
 - Swap budget: CVRP-50 uses up to 4 swap passes; CVRP-100 uses up to 2 swap passes. The method runs after `nearest_2opt_relocate_limited`.
 - The validation result is feasible for all 1000 instances. Its `average_cost` improves from the current default `nearest_2opt_relocate_limited` value `11.675451253965944` to `11.519231481331843`.
-- Default status: not switched in this commit. This method is the current strongest default candidate because it improves validation quality while keeping the public check under the target timing.
+- Default status: promoted to the default CPU submission method after this evaluation because it improves validation quality while keeping the public check under the target timing.

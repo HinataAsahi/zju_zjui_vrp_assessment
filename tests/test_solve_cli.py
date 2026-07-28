@@ -54,7 +54,7 @@ def test_solve_cli_writes_valid_cvrp_v1_json(tmp_path):
     ]
 
 
-def test_parse_args_defaults_to_nearest_2opt_relocate_limited():
+def test_parse_args_defaults_to_nearest_2opt_relocate_limited_swap():
     args = parse_args(
         [
             "--input",
@@ -64,10 +64,10 @@ def test_parse_args_defaults_to_nearest_2opt_relocate_limited():
         ]
     )
 
-    assert args.method == "nearest_2opt_relocate_limited"
+    assert args.method == "nearest_2opt_relocate_limited_swap"
 
 
-def test_solve_instances_defaults_to_nearest_2opt_relocate_limited(monkeypatch):
+def test_solve_instances_defaults_to_nearest_2opt_relocate_limited_swap(monkeypatch):
     instance = CVRPInstance(
         instance_id=3,
         depot=(0.0, 0.0),
@@ -85,7 +85,7 @@ def test_solve_instances_defaults_to_nearest_2opt_relocate_limited(monkeypatch):
 
     solutions = solve_instances([instance])
 
-    assert captured["method"] == "nearest_2opt_relocate_limited"
+    assert captured["method"] == "nearest_2opt_relocate_limited_swap"
     assert validate_solution(instance, solutions[0].routes).is_feasible is True
 
 
