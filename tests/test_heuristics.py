@@ -11,6 +11,7 @@ from src.heuristics import (  # noqa: E402
     improve_route_2opt,
     improve_routes_2opt,
     improve_routes_relocate_best,
+    improve_routes_swap_best,
     relocate_candidate_route_limit,
     relocate_limited_passes,
     solve_nearest_neighbor,
@@ -18,7 +19,9 @@ from src.heuristics import (  # noqa: E402
     solve_nearest_neighbor_2opt_relocate_best,
     solve_nearest_neighbor_2opt_relocate_candidate_limited,
     solve_nearest_neighbor_2opt_relocate_limited,
+    solve_nearest_neighbor_2opt_relocate_limited_swap,
     solve_with_method,
+    swap_limited_passes,
 )
 from src.vrp_eval import compute_route_cost, compute_total_cost, validate_solution  # noqa: E402
 from src.vrp_io import CVRPInstance  # noqa: E402
@@ -405,5 +408,136 @@ def test_solve_with_method_accepts_nearest_2opt_relocate_candidate_limited():
     instance = make_relocate_instance()
 
     routes = solve_with_method(instance, method="nearest_2opt_relocate_candidate_limited")
+
+    assert validate_solution(instance, routes).is_feasible is True
+
+
+def make_swap_instance(
+    demand: tuple[float, ...] = (1.0, 1.0, 1.0, 1.0),
+    capacity: float = 2.0,
+) -> CVRPInstance:
+    return CVRPInstance(
+        instance_id=0,
+        depot=(0.0, 0.0),
+        loc=((0.0, 1.0), (0.0, 2.0), (10.0, 1.0), (10.0, 2.0)),
+        demand=demand,
+        capacity=capacity,
+    )
+
+
+def test_improve_routes_swap_best_exchanges_customers_between_full_routes_to_reduce_cost():
+    """Catches a missing inter-route customer exchange search."""
+    instance = make_swap_instance()
+    routes = ((1, 3), (2, 4))
+
+    improved = improve_routes_swap_best(instance, routes)
+
+    assert sorted(customer for route in improved for customer in route) == [1, 2, 3, 4]
+    assert compute_total_cost(instance, improved) < compute_total_cost(instance, routes)
+    assert validate_solution(instance, improved).is_feasible is True
+
+
+def test_improve_routes_swap_best_skips_exchanges_that_break_capacity():
+    """Catches accepting a cheaper swap without checking both route loads."""
+    instance = make_swap_instance(
+        demand=(1.0, 1.5, 1.0, 0.5),
+        capacity=2.0,
+    )
+    routes = ((1, 3), (2, 4))
+
+    improved = improve_routes_swap_best(instance, routes)
+
+    assert improved == routes
+    assert validate_solution(instance, improved).is_feasible is True
+
+
+def test_improve_routes_swap_best_rejects_negative_max_passes():
+    instance = make_swap_instance()
+
+    with pytest.raises(ValueError, match="max_passes must be non-negative"):
+        improve_routes_swap_best(instance, ((1, 3), (2, 4)), max_passes=-1)
+
+
+def test_improve_routes_swap_best_skips_search_when_max_passes_is_zero():
+    instance = make_swap_instance()
+    routes = ((1, 3), (2, 4))
+
+    improved = improve_routes_swap_best(instance, routes, max_passes=0)
+
+    assert improved == routes
+
+
+def test_swap_limited_passes_uses_cvrp50_budget():
+    assert swap_limited_passes(1) == 4
+    assert swap_limited_passes(50) == 4
+
+
+def test_swap_limited_passes_uses_cvrp100_budget():
+    assert swap_limited_passes(51) == 2
+    assert swap_limited_passes(100) == 2
+
+
+@pytest.mark.parametrize(
+    ("customer_count", "expected_passes"),
+    ((50, 4), (51, 2), (100, 2)),
+)
+def test_solve_nearest_neighbor_2opt_relocate_limited_swap_forwards_budget(
+    monkeypatch, customer_count, expected_passes
+):
+    instance = CVRPInstance(
+        instance_id=0,
+        depot=(0.0, 0.0),
+        loc=tuple((float(customer_id), 0.0) for customer_id in range(1, customer_count + 1)),
+        demand=(1.0,) * customer_count,
+        capacity=float(customer_count),
+    )
+    captured: dict[str, int] = {}
+
+    def fake_solve_nearest_neighbor_2opt_relocate_limited(
+        instance, capacity_tol, improvement_tol
+    ):
+        return ((1,), (2,))
+
+    def fake_improve_routes_swap_best(
+        instance,
+        routes,
+        capacity_tol,
+        improvement_tol,
+        max_passes,
+    ):
+        captured["max_passes"] = max_passes
+        return tuple(tuple(route) for route in routes)
+
+    monkeypatch.setattr(
+        heuristics,
+        "solve_nearest_neighbor_2opt_relocate_limited",
+        fake_solve_nearest_neighbor_2opt_relocate_limited,
+    )
+    monkeypatch.setattr(
+        heuristics,
+        "improve_routes_swap_best",
+        fake_improve_routes_swap_best,
+    )
+
+    routes = solve_nearest_neighbor_2opt_relocate_limited_swap(instance)
+
+    assert routes == ((1,), (2,))
+    assert captured["max_passes"] == expected_passes
+
+
+def test_solve_nearest_neighbor_2opt_relocate_limited_swap_keeps_solution_feasible_and_not_worse():
+    instance = make_swap_instance()
+
+    base_routes = solve_nearest_neighbor_2opt_relocate_limited(instance)
+    swap_routes = solve_nearest_neighbor_2opt_relocate_limited_swap(instance)
+
+    assert validate_solution(instance, swap_routes).is_feasible is True
+    assert compute_total_cost(instance, swap_routes) <= compute_total_cost(instance, base_routes) + 1e-12
+
+
+def test_solve_with_method_accepts_nearest_2opt_relocate_limited_swap():
+    instance = make_swap_instance()
+
+    routes = solve_with_method(instance, method="nearest_2opt_relocate_limited_swap")
 
     assert validate_solution(instance, routes).is_feasible is True

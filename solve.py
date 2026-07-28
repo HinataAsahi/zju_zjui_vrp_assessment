@@ -45,7 +45,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "nearest_2opt is the faster route-inner 2-opt baseline; "
             "nearest_2opt_relocate_best adds full inter-route best relocate; "
             "nearest_2opt_relocate_limited uses fixed limited relocate budgets; "
-            "nearest_2opt_relocate_candidate_limited adds candidate-limited relocate."
+            "nearest_2opt_relocate_candidate_limited adds candidate-limited relocate; "
+            "nearest_2opt_relocate_limited_swap adds limited inter-route swap."
         ),
     )
     return parser.parse_args(argv)

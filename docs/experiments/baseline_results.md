@@ -148,3 +148,33 @@ python3 scripts/evaluate_baseline.py --input VRP_project/VRPData/validation_data
 
 - The `2/2` validation result is feasible for all 1000 instances. Its `average_cost` `11.677200534322004` is slightly worse than the current default `nearest_2opt_relocate_limited` validation cost `11.675451253965944`, but its public check timing is faster than the latest current-default run (`73.85` seconds).
 - Default status: keep `nearest_2opt_relocate_limited` for now until the speed-quality tradeoff is explicitly accepted.
+
+## 2026-07-28: Nearest Neighbor + Route-Inner 2-opt + Limited Relocate + Limited Inter-Route Swap
+
+### Command
+
+```bash
+python3 scripts/evaluate_baseline.py --input VRP_project/VRPData/validation_data.pkl --method nearest_2opt_relocate_limited_swap
+```
+
+### Results
+
+| Metric | Value |
+| --- | ---: |
+| instance_count | 1000 |
+| feasible_count | 1000 |
+| feasibility_rate | 1.0 |
+| average_cost | 11.519231481331843 |
+| average_gap | 0.0886829417106512 |
+| average_inference_time | 0.0912746598602098 |
+
+### Public Check Timing
+
+```bash
+/usr/bin/time -f "elapsed_seconds=%e" python3 solve.py --input VRP_project/VRPData/check_data_to_students.pkl --output outputs/predictions_limited_swap.json --method nearest_2opt_relocate_limited_swap --device cuda:0 --seed 2026
+```
+
+- `elapsed_seconds`: 144.29. The approximately 180-second target was met.
+- Swap budget: CVRP-50 uses up to 4 swap passes; CVRP-100 uses up to 2 swap passes. The method runs after `nearest_2opt_relocate_limited`.
+- The validation result is feasible for all 1000 instances. Its `average_cost` improves from the current default `nearest_2opt_relocate_limited` value `11.675451253965944` to `11.519231481331843`.
+- Default status: not switched in this commit. This method is the current strongest default candidate because it improves validation quality while keeping the public check under the target timing.
