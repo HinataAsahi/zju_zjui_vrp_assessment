@@ -1,11 +1,19 @@
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.heuristics import solve_nearest_neighbor  # noqa: E402
-from src.vrp_eval import validate_solution  # noqa: E402
+from src.heuristics import (  # noqa: E402
+    improve_route_2opt,
+    improve_routes_2opt,
+    solve_nearest_neighbor,
+    solve_nearest_neighbor_2opt,
+    solve_with_method,
+)
+from src.vrp_eval import compute_route_cost, compute_total_cost, validate_solution  # noqa: E402
 from src.vrp_io import CVRPInstance  # noqa: E402
 
 
@@ -54,3 +62,73 @@ def test_nearest_neighbor_rejects_customer_demand_over_capacity():
         assert "demand exceeds capacity" in str(exc)
     else:
         raise AssertionError("Expected ValueError")
+
+
+def make_crossing_route_instance() -> CVRPInstance:
+    return CVRPInstance(
+        instance_id=0,
+        depot=(0.5, -1.0),
+        loc=(
+            (0.0, 0.0),
+            (1.0, 1.0),
+            (0.0, 1.0),
+            (1.0, 0.0),
+            (2.0, 0.0),
+        ),
+        demand=(1.0, 1.0, 1.0, 1.0, 1.0),
+        capacity=5.0,
+    )
+
+
+def test_improve_route_2opt_reduces_crossing_route_cost():
+    instance = make_crossing_route_instance()
+    route = (1, 2, 3, 4)
+
+    improved = improve_route_2opt(instance, route)
+
+    assert len(improved) == len(route)
+    assert sorted(improved) == sorted(route)
+    assert compute_route_cost(instance, improved) < compute_route_cost(instance, route)
+
+
+def test_improve_route_2opt_keeps_local_optimum_route_unchanged():
+    instance = make_crossing_route_instance()
+    route = (1, 3, 2, 4)
+
+    improved = improve_route_2opt(instance, route)
+
+    assert improved == route
+
+
+def test_improve_routes_2opt_preserves_route_boundaries_and_customer_sets():
+    instance = make_crossing_route_instance()
+    routes = ((1, 2, 3, 4), (5,))
+
+    improved = improve_routes_2opt(instance, routes)
+
+    assert len(improved) == len(routes)
+    assert [sorted(route) for route in improved] == [sorted(route) for route in routes]
+    assert compute_total_cost(instance, improved) <= compute_total_cost(instance, routes) + 1e-12
+
+
+def test_solve_nearest_neighbor_2opt_keeps_solution_feasible_and_not_worse():
+    instance = CVRPInstance(
+        instance_id=0,
+        depot=(0.0, 0.0),
+        loc=((1.0, 0.0), (0.0, 1.0), (1.0, 1.0), (2.0, 0.0)),
+        demand=(1.0, 1.0, 1.0, 1.0),
+        capacity=4.0,
+    )
+
+    nearest_routes = solve_nearest_neighbor(instance)
+    improved_routes = solve_nearest_neighbor_2opt(instance)
+
+    assert validate_solution(instance, improved_routes).is_feasible is True
+    assert compute_total_cost(instance, improved_routes) <= compute_total_cost(instance, nearest_routes) + 1e-12
+
+
+def test_solve_with_method_rejects_unknown_method():
+    instance = make_crossing_route_instance()
+
+    with pytest.raises(ValueError, match="unknown solver method"):
+        solve_with_method(instance, method="not_a_method")
