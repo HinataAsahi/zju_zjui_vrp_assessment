@@ -50,7 +50,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help=(
             "Solver method to evaluate. nearest_2opt_relocate_limited is "
             "the stable default with fixed limited relocate; use "
-            "nearest_2opt_relocate_best to evaluate full inter-route best relocate."
+            "nearest_2opt_relocate_best to evaluate full inter-route best relocate; "
+            "use nearest_2opt_relocate_candidate_limited to evaluate "
+            "candidate-limited relocate."
         ),
     )
     args = parser.parse_args(argv)

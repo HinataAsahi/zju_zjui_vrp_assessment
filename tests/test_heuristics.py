@@ -11,10 +11,12 @@ from src.heuristics import (  # noqa: E402
     improve_route_2opt,
     improve_routes_2opt,
     improve_routes_relocate_best,
+    relocate_candidate_route_limit,
     relocate_limited_passes,
     solve_nearest_neighbor,
     solve_nearest_neighbor_2opt,
     solve_nearest_neighbor_2opt_relocate_best,
+    solve_nearest_neighbor_2opt_relocate_candidate_limited,
     solve_nearest_neighbor_2opt_relocate_limited,
     solve_with_method,
 )
@@ -195,6 +197,43 @@ def test_improve_routes_relocate_best_rejects_negative_max_passes():
         improve_routes_relocate_best(instance, ((1, 2), (3,)), max_passes=-1)
 
 
+def test_improve_routes_relocate_best_rejects_negative_candidate_route_limit():
+    instance = make_relocate_instance()
+
+    with pytest.raises(ValueError, match="max_candidate_routes must be non-negative"):
+        improve_routes_relocate_best(
+            instance,
+            ((1, 2), (3,)),
+            max_candidate_routes=-1,
+        )
+
+
+def test_improve_routes_relocate_best_skips_search_when_candidate_route_limit_is_zero():
+    instance = make_relocate_instance()
+    routes = ((1, 2), (3,))
+
+    improved = improve_routes_relocate_best(
+        instance,
+        routes,
+        max_candidate_routes=0,
+    )
+
+    assert improved == routes
+
+
+def test_improve_routes_relocate_best_candidate_limit_handles_empty_target_route():
+    instance = make_relocate_instance()
+    routes = ((1, 2), (), (3,))
+
+    improved = improve_routes_relocate_best(
+        instance,
+        routes,
+        max_candidate_routes=1,
+    )
+
+    assert sorted(customer for route in improved for customer in route) == [1, 2, 3]
+
+
 def test_solve_nearest_neighbor_2opt_relocate_best_keeps_solution_feasible_and_not_worse():
     instance = CVRPInstance(
         instance_id=0,
@@ -227,6 +266,16 @@ def test_relocate_limited_passes_uses_cvrp50_budget():
 def test_relocate_limited_passes_uses_cvrp100_budget():
     assert relocate_limited_passes(51) == 3
     assert relocate_limited_passes(100) == 3
+
+
+def test_relocate_candidate_route_limit_uses_cvrp50_budget():
+    assert relocate_candidate_route_limit(1) == 4
+    assert relocate_candidate_route_limit(50) == 4
+
+
+def test_relocate_candidate_route_limit_uses_cvrp100_budget():
+    assert relocate_candidate_route_limit(51) == 3
+    assert relocate_candidate_route_limit(100) == 3
 
 
 @pytest.mark.parametrize(
@@ -263,6 +312,55 @@ def test_solve_nearest_neighbor_2opt_relocate_limited_forwards_budget_not_hardco
     assert captured["max_relocate_passes"] == expected_passes
 
 
+@pytest.mark.parametrize(
+    ("customer_count", "expected_passes", "expected_candidate_routes"),
+    ((50, 8, 4), (51, 3, 3), (100, 3, 3)),
+)
+def test_solve_nearest_neighbor_2opt_relocate_candidate_limited_forwards_budgets(
+    monkeypatch, customer_count, expected_passes, expected_candidate_routes
+):
+    instance = CVRPInstance(
+        instance_id=0,
+        depot=(0.0, 0.0),
+        loc=tuple((float(customer_id), 0.0) for customer_id in range(1, customer_count + 1)),
+        demand=(1.0,) * customer_count,
+        capacity=float(customer_count),
+    )
+    captured: dict[str, int | None] = {}
+
+    def fake_solve_nearest_neighbor_2opt(instance, capacity_tol, improvement_tol):
+        return ((1,),)
+
+    def fake_improve_routes_relocate_best(
+        instance,
+        routes,
+        capacity_tol,
+        improvement_tol,
+        max_passes,
+        max_candidate_routes,
+    ):
+        captured["max_passes"] = max_passes
+        captured["max_candidate_routes"] = max_candidate_routes
+        return tuple(tuple(route) for route in routes)
+
+    monkeypatch.setattr(
+        heuristics,
+        "solve_nearest_neighbor_2opt",
+        fake_solve_nearest_neighbor_2opt,
+    )
+    monkeypatch.setattr(
+        heuristics,
+        "improve_routes_relocate_best",
+        fake_improve_routes_relocate_best,
+    )
+
+    routes = solve_nearest_neighbor_2opt_relocate_candidate_limited(instance)
+
+    assert routes == ((1,),)
+    assert captured["max_passes"] == expected_passes
+    assert captured["max_candidate_routes"] == expected_candidate_routes
+
+
 def test_solve_nearest_neighbor_2opt_relocate_limited_keeps_solution_feasible_and_not_worse():
     instance = CVRPInstance(
         instance_id=0,
@@ -279,9 +377,33 @@ def test_solve_nearest_neighbor_2opt_relocate_limited_keeps_solution_feasible_an
     assert compute_total_cost(instance, limited_routes) <= compute_total_cost(instance, base_routes) + 1e-12
 
 
+def test_solve_nearest_neighbor_2opt_relocate_candidate_limited_keeps_solution_feasible_and_not_worse():
+    instance = CVRPInstance(
+        instance_id=0,
+        depot=(0.0, 0.0),
+        loc=((1.0, 0.0), (2.0, 0.0), (10.0, 0.0), (11.0, 0.0)),
+        demand=(1.0, 1.0, 1.0, 1.0),
+        capacity=2.0,
+    )
+
+    base_routes = solve_nearest_neighbor_2opt(instance)
+    candidate_routes = solve_nearest_neighbor_2opt_relocate_candidate_limited(instance)
+
+    assert validate_solution(instance, candidate_routes).is_feasible is True
+    assert compute_total_cost(instance, candidate_routes) <= compute_total_cost(instance, base_routes) + 1e-12
+
+
 def test_solve_with_method_accepts_nearest_2opt_relocate_limited():
     instance = make_relocate_instance()
 
     routes = solve_with_method(instance, method="nearest_2opt_relocate_limited")
+
+    assert validate_solution(instance, routes).is_feasible is True
+
+
+def test_solve_with_method_accepts_nearest_2opt_relocate_candidate_limited():
+    instance = make_relocate_instance()
+
+    routes = solve_with_method(instance, method="nearest_2opt_relocate_candidate_limited")
 
     assert validate_solution(instance, routes).is_feasible is True

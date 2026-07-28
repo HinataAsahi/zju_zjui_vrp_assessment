@@ -336,3 +336,71 @@ def test_evaluate_baseline_cli_help_describes_limited_relocate_method():
 
     assert result.returncode == 0
     assert "limited relocate" in result.stdout
+
+
+def test_evaluate_instances_accepts_nearest_2opt_relocate_candidate_limited_method():
+    instance = CVRPInstance(
+        instance_id=0,
+        depot=(0.0, 0.0),
+        loc=((1.0, 0.0), (10.0, 0.0), (11.0, 0.0)),
+        demand=(1.0, 1.0, 1.0),
+        capacity=3.0,
+        reference_cost=22.0,
+    )
+
+    summary = evaluate_instances(
+        [instance],
+        method="nearest_2opt_relocate_candidate_limited",
+    )
+
+    assert summary.instance_count == 1
+    assert summary.feasible_count == 1
+    assert summary.feasibility_rate == 1.0
+    assert summary.average_cost > 0.0
+
+
+def test_evaluate_baseline_cli_accepts_nearest_2opt_relocate_candidate_limited(tmp_path):
+    input_path = tmp_path / "validation.pkl"
+    raw_instances = [
+        ([[0, 0]], [[1, 0], [10, 0], [11, 0]], [1, 1, 1], 3, [[1, 2, 3]], 22.0),
+    ]
+    with input_path.open("wb") as handle:
+        pickle.dump(raw_instances, handle)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "evaluate_baseline.py"),
+            "--input",
+            str(input_path),
+            "--method",
+            "nearest_2opt_relocate_candidate_limited",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["instance_count"] == 1
+    assert payload["feasible_count"] == 1
+    assert payload["feasibility_rate"] == 1.0
+
+
+def test_evaluate_baseline_cli_help_describes_candidate_limited_relocate_method():
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "evaluate_baseline.py"),
+            "--help",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert "candidate-limited relocate" in result.stdout

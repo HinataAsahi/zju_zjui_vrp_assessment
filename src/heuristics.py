@@ -14,12 +14,14 @@ SolverMethod = Literal[
     "nearest_2opt",
     "nearest_2opt_relocate_best",
     "nearest_2opt_relocate_limited",
+    "nearest_2opt_relocate_candidate_limited",
 ]
 SOLVER_METHODS: tuple[SolverMethod, ...] = (
     "nearest",
     "nearest_2opt",
     "nearest_2opt_relocate_best",
     "nearest_2opt_relocate_limited",
+    "nearest_2opt_relocate_candidate_limited",
 )
 
 
@@ -156,6 +158,7 @@ def _find_best_relocate_move(
     route_loads: tuple[float, ...],
     capacity_tol: float,
     improvement_tol: float,
+    max_candidate_routes: int | None = None,
 ) -> _RelocateMove | None:
     best_move: _RelocateMove | None = None
 
@@ -168,15 +171,19 @@ def _find_best_relocate_move(
                 + source_route[source_customer_position + 1 :]
             )
             new_source_cost = compute_route_cost(instance, new_source_route)
+            target_route_indexes = _candidate_target_route_indexes(
+                instance,
+                routes,
+                route_loads,
+                source_route_index=source_route_index,
+                customer_id=customer_id,
+                customer_demand=customer_demand,
+                capacity_tol=capacity_tol,
+                max_candidate_routes=max_candidate_routes,
+            )
 
-            for target_route_index, target_route in enumerate(routes):
-                if source_route_index == target_route_index:
-                    continue
-                if (
-                    route_loads[target_route_index] + customer_demand
-                    > instance.capacity + capacity_tol
-                ):
-                    continue
+            for target_route_index in target_route_indexes:
+                target_route = routes[target_route_index]
 
                 target_cost = compute_route_cost(instance, target_route)
                 current_cost = source_cost + target_cost
@@ -221,6 +228,56 @@ def _find_best_relocate_move(
     return best_move
 
 
+def _candidate_target_route_indexes(
+    instance: CVRPInstance,
+    routes: tuple[tuple[int, ...], ...],
+    route_loads: tuple[float, ...],
+    source_route_index: int,
+    customer_id: int,
+    customer_demand: float,
+    capacity_tol: float,
+    max_candidate_routes: int | None,
+) -> tuple[int, ...]:
+    feasible_target_indexes = [
+        target_route_index
+        for target_route_index in range(len(routes))
+        if target_route_index != source_route_index
+        and route_loads[target_route_index] + customer_demand
+        <= instance.capacity + capacity_tol
+    ]
+    if max_candidate_routes is None:
+        return tuple(feasible_target_indexes)
+    if max_candidate_routes == 0:
+        return ()
+
+    customer_point = instance.loc[customer_id - 1]
+    ranked_targets = sorted(
+        feasible_target_indexes,
+        key=lambda target_route_index: (
+            _route_distance_to_customer_point(
+                instance,
+                routes[target_route_index],
+                customer_point,
+            ),
+            target_route_index,
+        ),
+    )
+    return tuple(ranked_targets[:max_candidate_routes])
+
+
+def _route_distance_to_customer_point(
+    instance: CVRPInstance,
+    route: Sequence[int],
+    customer_point: tuple[float, float],
+) -> float:
+    if not route:
+        return euclidean(customer_point, instance.depot)
+    return min(
+        euclidean(customer_point, _route_node_point(instance, target_customer_id))
+        for target_customer_id in route
+    )
+
+
 def _apply_relocate_move(
     instance: CVRPInstance,
     routes: tuple[tuple[int, ...], ...],
@@ -261,9 +318,12 @@ def improve_routes_relocate_best(
     capacity_tol: float = 1e-9,
     improvement_tol: float = 1e-12,
     max_passes: int = 50,
+    max_candidate_routes: int | None = None,
 ) -> tuple[tuple[int, ...], ...]:
     if max_passes < 0:
         raise ValueError("max_passes must be non-negative")
+    if max_candidate_routes is not None and max_candidate_routes < 0:
+        raise ValueError("max_candidate_routes must be non-negative")
 
     best_routes = tuple(tuple(route) for route in routes)
     for _ in range(max_passes):
@@ -274,6 +334,7 @@ def improve_routes_relocate_best(
             route_loads,
             capacity_tol=capacity_tol,
             improvement_tol=improvement_tol,
+            max_candidate_routes=max_candidate_routes,
         )
         if move is None:
             return best_routes
@@ -301,6 +362,12 @@ def relocate_limited_passes(customer_count: int) -> int:
     return 3
 
 
+def relocate_candidate_route_limit(customer_count: int) -> int:
+    if customer_count <= 50:
+        return 4
+    return 3
+
+
 def solve_nearest_neighbor_2opt(
     instance: CVRPInstance,
     capacity_tol: float = 1e-9,
@@ -319,6 +386,7 @@ def solve_nearest_neighbor_2opt_relocate_best(
     capacity_tol: float = 1e-9,
     improvement_tol: float = 1e-12,
     max_relocate_passes: int = 50,
+    max_candidate_routes: int | None = None,
 ) -> tuple[tuple[int, ...], ...]:
     routes = solve_nearest_neighbor_2opt(
         instance,
@@ -331,6 +399,7 @@ def solve_nearest_neighbor_2opt_relocate_best(
         capacity_tol=capacity_tol,
         improvement_tol=improvement_tol,
         max_passes=max_relocate_passes,
+        max_candidate_routes=max_candidate_routes,
     )
 
 
@@ -344,6 +413,26 @@ def solve_nearest_neighbor_2opt_relocate_limited(
         capacity_tol=capacity_tol,
         improvement_tol=improvement_tol,
         max_relocate_passes=relocate_limited_passes(instance.customer_count),
+    )
+
+
+def solve_nearest_neighbor_2opt_relocate_candidate_limited(
+    instance: CVRPInstance,
+    capacity_tol: float = 1e-9,
+    improvement_tol: float = 1e-12,
+) -> tuple[tuple[int, ...], ...]:
+    routes = solve_nearest_neighbor_2opt(
+        instance,
+        capacity_tol=capacity_tol,
+        improvement_tol=improvement_tol,
+    )
+    return improve_routes_relocate_best(
+        instance,
+        routes,
+        capacity_tol=capacity_tol,
+        improvement_tol=improvement_tol,
+        max_passes=relocate_limited_passes(instance.customer_count),
+        max_candidate_routes=relocate_candidate_route_limit(instance.customer_count),
     )
 
 
@@ -369,6 +458,12 @@ def solve_with_method(
         )
     if method == "nearest_2opt_relocate_limited":
         return solve_nearest_neighbor_2opt_relocate_limited(
+            instance,
+            capacity_tol=capacity_tol,
+            improvement_tol=improvement_tol,
+        )
+    if method == "nearest_2opt_relocate_candidate_limited":
+        return solve_nearest_neighbor_2opt_relocate_candidate_limited(
             instance,
             capacity_tol=capacity_tol,
             improvement_tol=improvement_tol,
