@@ -13,8 +13,19 @@ cd zju_zjui_vrp_assessment
 # 3. 如果仓库已经存在，用这条命令同步最新代码
 git pull origin main
 
-# 4. 将官方数据目录放到仓库根目录；把 SOURCE_DIR 替换成你的实际数据所在目录
-cp -r SOURCE_DIR/VRP_project ./VRP_project
+# 4. 将官方数据目录放到仓库根目录
+# 注意：下面命令里的 /实际/父目录 是占位路径，必须替换成你电脑上真实存在的目录
+# 情况 A：如果你的数据目录外层叫 VRP_project，并且它里面有 VRPData
+ls /实际/父目录/VRP_project/VRPData
+cp -r /实际/父目录/VRP_project ./VRP_project
+
+# 情况 B：如果你的数据在 Windows 下载目录中，并且你正在 WSL/Linux 里运行
+# 把 YOUR_WINDOWS_USERNAME 替换成你的 Windows 用户名
+ls /mnt/c/Users/YOUR_WINDOWS_USERNAME/Downloads/VRP_project/VRPData
+cp -r /mnt/c/Users/YOUR_WINDOWS_USERNAME/Downloads/VRP_project ./VRP_project
+
+# 情况 C：如果你已经手动把 VRP_project 放进当前仓库根目录，则跳过复制，只检查即可
+ls VRP_project/VRPData
 
 # 5. 检查三个数据文件是否在预期位置
 python3 -c "from pathlib import Path; files=['train_data.pkl','validation_data.pkl','check_data_to_students.pkl']; base=Path('VRP_project/VRPData'); print({name:(base/name).exists() for name in files})"
