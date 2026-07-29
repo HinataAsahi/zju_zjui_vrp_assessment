@@ -188,3 +188,26 @@ python3 scripts/evaluate_baseline.py --input VRP_project/VRPData/validation_data
 - Formal default `outputs/predictions.json` was regenerated with the `5/2` budget in `148.00` seconds and passed a local feasibility check for all 1500 public-check instances.
 - The validation result is feasible for all 1000 instances. Its `average_cost` improves from the previous default `4/2` value `11.519231481331843` to `11.513862926474488`.
 - Default status: `5/2` is the tuned default CPU submission method.
+
+## 2026-07-29: Reference-Priority Oracle Check
+
+### Purpose
+
+This check tests whether a supervised-imitation model that predicts customer
+priority is worth implementing. It uses validation reference routes as an
+oracle priority order, reconstructs feasible routes by capacity splitting, and
+optionally applies the existing post-processing pipeline.
+
+### Results
+
+| Variant | Feasible | Validation average_cost | Validation average_gap | Elapsed seconds | Decision |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Reference priority + capacity split | 1000/1000 | 12.264334883168045 | 0.15775741444822425 | 0.54 | Feasible but too weak alone. |
+| Reference priority + capacity split + 2-opt | 1000/1000 | 11.700193004258352 | 0.10528970373869408 | 1.15 | Still worse than the tuned heuristic default. |
+| Reference priority + capacity split + 2-opt + limited relocate + limited swap | 1000/1000 | 10.995458085453048 | 0.0378498455595169 | 82.22 | Strong oracle upper bound; customer-priority learning is worth trying. |
+
+### Conclusion
+
+- Customer-priority representation is usable: oracle priorities always produced feasible routes after capacity splitting.
+- The representation should not be used alone. It needs the existing `2-opt + limited relocate + limited swap` post-processing.
+- The oracle result `10.995458085453048` is much better than the current tuned heuristic default `11.513862926474488`, so a supervised-imitation priority model has a meaningful quality target.

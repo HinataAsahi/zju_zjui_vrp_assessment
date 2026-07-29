@@ -2,6 +2,18 @@
 
 本文件用于按日期简短记录 ZJU/ZJUI VRP assessment 项目的推进情况。
 
+## 2026-07-29
+
+### 今日进展
+
+- 完成客户优先级 oracle 测试：参考优先级 + 容量切分可保证 1000/1000 validation 可行。
+- 确认客户优先级必须接完整 `2-opt + relocate + swap` 后处理，oracle 平均 cost 可到 10.995458085453048。
+
+### 状态与下一步
+
+- 当前 heuristic 默认仍保持 `nearest_2opt_relocate_limited_swap` 5/2。
+- 客户优先级 supervised imitation 值得继续设计，但不能直接替代 heuristic；应作为初始解生成器再接后处理。
+
 ## 2026-07-28
 
 ### 今日进展
