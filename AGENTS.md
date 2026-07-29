@@ -44,6 +44,12 @@ cleared, unless the user explicitly changes the workflow.
 - Keep generated caches and local experiment outputs out of git.
 - Do not commit the raw project data directory unless the user explicitly asks
   for it.
+- `.worktrees/` is temporary workspace metadata; after its contents are removed
+  or no longer needed, delete the directory itself instead of preserving an empty
+  folder.
+- Keep Superpowers workflow artifacts, including specs and plans, under the
+  ignored `docs/superpowers/` tree. Do not create or preserve a separate
+  `docs/specs/` directory for those files.
 - New dependencies may be installed when needed for documentation generation,
   implementation, evaluation, or training. Explain why the dependency is needed,
   prefer the smallest practical dependency set, and record reproducibility
