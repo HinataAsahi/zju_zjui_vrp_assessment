@@ -8,11 +8,14 @@
 
 - 完成客户优先级 oracle 测试：参考优先级 + 容量切分可保证 1000/1000 validation 可行。
 - 确认客户优先级必须接完整 `2-opt + relocate + swap` 后处理，oracle 平均 cost 可到 10.995458085453048。
+- 落地 supervised imitation 第一版：优先级标签、特征、模型、训练 CLI、评估 CLI 和测试。
+- 编写 GPU 迁移运行指令，覆盖拉取仓库、检查数据、训练、评估和生成预测结果。
+- 完成 review 修正：训练验证集限制必须为正，补充 unlabeled 评估测试，并收紧迁移文档格式。
 
 ### 状态与下一步
 
 - 当前 heuristic 默认仍保持 `nearest_2opt_relocate_limited_swap` 5/2。
-- 客户优先级 supervised imitation 值得继续设计，但不能直接替代 heuristic；应作为初始解生成器再接后处理。
+- 客户优先级模型仍是实验线，需在 4060 上训练后再和默认 heuristic 对比。
 
 ## 2026-07-28
 
