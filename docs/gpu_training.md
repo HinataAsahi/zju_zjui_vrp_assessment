@@ -51,6 +51,16 @@ python3 scripts/evaluate_priority_model.py --input VRP_project/VRPData/validatio
 # 12. 对官方 check 数据生成优先级模型预测结果，便于和 heuristic 输出对比
 python3 scripts/evaluate_priority_model.py --input VRP_project/VRPData/check_data_to_students.pkl --checkpoint checkpoints/priority_mse_rank.pt --output outputs/predictions_priority_model.json --device cuda --postprocess
 
+# 13. 正式训练第二版客户优先级模型：MSE + pairwise ranking loss
+python3 scripts/train_priority_model.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --checkpoint-output checkpoints/priority_mse_pairwise_rank.pt --summary-output outputs/priority_mse_pairwise_rank_summary.json --epochs 50 --batch-size 64 --hidden-dim 128 --num-heads 4 --num-layers 2 --dropout 0.1 --learning-rate 0.001 --weight-decay 0.0001 --eval-limit 100 --device cuda --postprocess-eval --loss mse_pairwise --pairwise-weight 0.5 --pairwise-margin 0.1
+
+# 14. 在完整 validation 上评估第二版优先级模型
+python3 scripts/evaluate_priority_model.py --input VRP_project/VRPData/validation_data.pkl --checkpoint checkpoints/priority_mse_pairwise_rank.pt --limit 1000 --device cuda --postprocess
+
+# 15. 对官方 check 数据生成第二版优先级模型预测结果
+python3 scripts/evaluate_priority_model.py --input VRP_project/VRPData/check_data_to_students.pkl --checkpoint checkpoints/priority_mse_pairwise_rank.pt --output outputs/predictions_priority_mse_pairwise.json --device cuda --postprocess
+
 # 当前默认提交方法仍是 solve.py 的 heuristic
 # 只有当 priority_mse_rank.pt 在 validation 上优于默认 heuristic，并且 check 数据运行时间可接受时，再考虑把模型路线作为默认提交方案
+# 第二版 priority_mse_pairwise_rank.pt 也必须通过同样判断，不能只看训练 loss
 ```

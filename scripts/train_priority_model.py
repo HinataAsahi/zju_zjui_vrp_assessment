@@ -28,6 +28,7 @@ from src.priority_model import (  # noqa: E402
     PriorityScoringModel,
     collate_priority_samples,
     masked_mse_loss,
+    masked_pairwise_ranking_loss,
     resolve_torch_device,
 )
 from src.vrp_io import load_instances  # noqa: E402
@@ -88,6 +89,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--learning-rate", type=_positive_float, default=1e-3)
     parser.add_argument("--weight-decay", type=_non_negative_float, default=1e-4)
     parser.add_argument("--grad-clip", type=_non_negative_float, default=1.0)
+    parser.add_argument(
+        "--loss",
+        choices=("mse", "pairwise", "mse_pairwise"),
+        default="mse",
+    )
+    parser.add_argument("--pairwise-weight", type=_positive_float, default=1.0)
+    parser.add_argument("--pairwise-margin", type=_non_negative_float, default=0.1)
     parser.add_argument("--hidden-dim", type=_positive_int, default=128)
     parser.add_argument("--num-heads", type=_positive_int, default=4)
     parser.add_argument("--num-layers", type=_positive_int, default=2)
@@ -109,6 +117,27 @@ def _load_limited_instances(path: str, limit: int | None):
     if limit is not None:
         return instances[:limit]
     return instances
+
+
+def _compute_training_loss(
+    scores: torch.Tensor,
+    labels: torch.Tensor,
+    mask: torch.Tensor,
+    args: argparse.Namespace,
+) -> torch.Tensor:
+    mse_loss = masked_mse_loss(scores, labels, mask)
+    if args.loss == "mse":
+        return mse_loss
+
+    pairwise_loss = masked_pairwise_ranking_loss(
+        scores,
+        labels,
+        mask,
+        margin=args.pairwise_margin,
+    )
+    if args.loss == "pairwise":
+        return pairwise_loss
+    return mse_loss + args.pairwise_weight * pairwise_loss
 
 
 def _save_checkpoint(
@@ -182,7 +211,9 @@ def train_priority_model(args: argparse.Namespace) -> dict:
         f"device={device} train_instances={len(train_instances)} "
         f"validation_instances={len(validation_instances)} epochs={args.epochs} "
         f"batch_size={args.batch_size} eval_limit={args.eval_limit} "
-        f"postprocess_eval={args.postprocess_eval}"
+        f"postprocess_eval={args.postprocess_eval} loss={args.loss} "
+        f"pairwise_weight={args.pairwise_weight} "
+        f"pairwise_margin={args.pairwise_margin}"
     )
 
     for epoch in range(1, args.epochs + 1):
@@ -197,7 +228,7 @@ def train_priority_model(args: argparse.Namespace) -> dict:
 
             optimizer.zero_grad(set_to_none=True)
             scores = model(features, mask)
-            loss = masked_mse_loss(scores, labels, mask)
+            loss = _compute_training_loss(scores, labels, mask, args)
             loss.backward()
             if args.grad_clip > 0:
                 torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)

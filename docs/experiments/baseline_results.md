@@ -211,3 +211,53 @@ optionally applies the existing post-processing pipeline.
 - Customer-priority representation is usable: oracle priorities always produced feasible routes after capacity splitting.
 - The representation should not be used alone. It needs the existing `2-opt + limited relocate + limited swap` post-processing.
 - The oracle result `10.995458085453048` is much better than the current tuned heuristic default `11.513862926474488`, so a supervised-imitation priority model has a meaningful quality target.
+
+## 2026-07-29: Supervised Imitation Priority Model, MSE Rank Loss
+
+### Purpose
+
+This is the first learned priority model trained on the RTX 4060 laptop. It
+predicts customer priority scores, reconstructs routes by capacity splitting,
+and applies the same `2-opt + limited relocate + limited swap` post-processing
+as the priority oracle check.
+
+### Training Setup
+
+```bash
+python3 scripts/train_priority_model.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --checkpoint-output checkpoints/priority_mse_rank.pt --summary-output outputs/priority_mse_rank_summary.json --epochs 50 --batch-size 64 --hidden-dim 128 --num-heads 4 --num-layers 2 --dropout 0.1 --learning-rate 0.001 --weight-decay 0.0001 --eval-limit 100 --device cuda --postprocess-eval
+```
+
+### Training Result
+
+| Metric | Value |
+| --- | ---: |
+| Train instances | 7000 |
+| Validation instances available | 1000 |
+| Validation instances per epoch | 100 |
+| Best epoch | 29 |
+| Best validation feasible count | 100/100 |
+| Best validation average_cost | 12.218516753151578 |
+| Best validation average_gap | 0.16157482063807882 |
+
+### Comparison on the First 100 Validation Instances
+
+| Method | Feasible | Average cost | Average gap |
+| --- | ---: | ---: | ---: |
+| Tuned heuristic default | 100/100 | 11.424134539766737 | 0.08426480064303492 |
+| MSE priority model | 100/100 | 12.215777101910927 | 0.16126667122853794 |
+
+### Check Data Sanity
+
+| Output | Feasible | Average cost | Average gap |
+| --- | ---: | ---: | ---: |
+| `outputs/predictions.json` | 1500/1500 | 13.976807065714844 | N/A |
+| `outputs/predictions_priority_model.json` | 1500/1500 | 15.618431050502089 | N/A |
+
+### Conclusion
+
+- The learned MSE priority model is feasible but clearly weaker than the tuned
+  heuristic default.
+- Simply training for more epochs is unlikely to close the gap; the loss curve
+  improved early and then plateaued.
+- The next learned-priority experiment should use a ranking-aware objective,
+  starting with `mse_pairwise`, while keeping the heuristic default unchanged.

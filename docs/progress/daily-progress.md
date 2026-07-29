@@ -11,11 +11,13 @@
 - 落地 supervised imitation 第一版：优先级标签、特征、模型、训练 CLI、评估 CLI 和测试。
 - 编写 GPU 迁移运行指令，覆盖拉取仓库、检查数据、训练、评估和生成预测结果。
 - 完成 review 修正：训练验证集限制必须为正，补充 unlabeled 评估测试，并收紧迁移文档格式。
+- 回收第一版 MSE priority 训练结果：可行但弱于当前 heuristic，不能替换默认提交。
+- 增加可选 `mse_pairwise` 训练目标，准备在 4060 上做第二版 priority 实验。
 
 ### 状态与下一步
 
 - 当前 heuristic 默认仍保持 `nearest_2opt_relocate_limited_swap` 5/2。
-- 客户优先级模型仍是实验线，需在 4060 上训练后再和默认 heuristic 对比。
+- 客户优先级模型仍是实验线；下一步训练 `priority_mse_pairwise_rank.pt` 后再对比默认 heuristic。
 
 ## 2026-07-28
 

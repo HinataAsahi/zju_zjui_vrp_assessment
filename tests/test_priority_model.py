@@ -14,6 +14,7 @@ from src.priority_model import (  # noqa: E402
     PriorityScoringModel,
     collate_priority_samples,
     masked_mse_loss,
+    masked_pairwise_ranking_loss,
     predict_priority_scores,
 )
 from src.vrp_io import CVRPInstance  # noqa: E402
@@ -89,6 +90,29 @@ def test_priority_model_forward_and_masked_mse_loss():
     assert scores.shape == (1, 3)
     assert loss.ndim == 0
     assert torch.isfinite(loss)
+
+
+def test_masked_pairwise_ranking_loss_penalizes_wrong_customer_order():
+    labels = torch.tensor([[0.0, 0.5, 1.0]], dtype=torch.float32)
+    mask = torch.tensor([[True, True, True]])
+    correctly_ordered_scores = torch.tensor([[0.0, 0.3, 0.6]], dtype=torch.float32)
+    reversed_scores = torch.tensor([[0.6, 0.3, 0.0]], dtype=torch.float32)
+
+    correct_loss = masked_pairwise_ranking_loss(
+        correctly_ordered_scores,
+        labels,
+        mask,
+        margin=0.1,
+    )
+    reversed_loss = masked_pairwise_ranking_loss(
+        reversed_scores,
+        labels,
+        mask,
+        margin=0.1,
+    )
+
+    assert correct_loss.item() == pytest.approx(0.0)
+    assert reversed_loss.item() == pytest.approx(0.5)
 
 
 def test_predict_priority_scores_returns_one_score_per_customer():

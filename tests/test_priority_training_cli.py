@@ -86,6 +86,77 @@ def test_train_priority_model_cli_writes_checkpoint_and_summary(tmp_path):
     assert "model_state_dict" in checkpoint
 
 
+def test_train_priority_model_cli_accepts_mse_pairwise_loss(tmp_path):
+    train_path = tmp_path / "train.pkl"
+    validation_path = tmp_path / "validation.pkl"
+    checkpoint_path = tmp_path / "checkpoints" / "priority_pairwise.pt"
+    _write_labeled_instances(train_path)
+    _write_labeled_instances(validation_path)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "train_priority_model.py"),
+            "--train-input",
+            str(train_path),
+            "--validation-input",
+            str(validation_path),
+            "--checkpoint-output",
+            str(checkpoint_path),
+            "--epochs",
+            "1",
+            "--batch-size",
+            "2",
+            "--hidden-dim",
+            "16",
+            "--num-heads",
+            "4",
+            "--num-layers",
+            "1",
+            "--dropout",
+            "0",
+            "--eval-limit",
+            "2",
+            "--device",
+            "cpu",
+            "--loss",
+            "mse_pairwise",
+            "--pairwise-weight",
+            "0.5",
+            "--pairwise-margin",
+            "0.1",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "[train] device=cpu" in result.stderr
+    assert "loss=mse_pairwise" in result.stderr
+    checkpoint = torch.load(checkpoint_path, map_location="cpu")
+    assert checkpoint["training_args"]["loss"] == "mse_pairwise"
+    assert checkpoint["training_args"]["pairwise_weight"] == 0.5
+    assert checkpoint["training_args"]["pairwise_margin"] == 0.1
+
+
+def test_train_priority_model_rejects_unknown_loss():
+    with pytest.raises(SystemExit):
+        parse_args(
+            [
+                "--train-input",
+                "train.pkl",
+                "--validation-input",
+                "validation.pkl",
+                "--checkpoint-output",
+                "priority.pt",
+                "--loss",
+                "bad_loss",
+            ]
+        )
+
+
 def test_train_priority_model_rejects_negative_eval_limit():
     with pytest.raises(SystemExit):
         parse_args(

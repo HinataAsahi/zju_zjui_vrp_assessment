@@ -149,6 +149,32 @@ def masked_mse_loss(
     return ((scores - labels) ** 2)[mask].mean()
 
 
+def masked_pairwise_ranking_loss(
+    scores: torch.Tensor,
+    labels: torch.Tensor,
+    mask: torch.Tensor,
+    margin: float = 0.1,
+) -> torch.Tensor:
+    if scores.shape != labels.shape or scores.shape != mask.shape:
+        raise ValueError("scores, labels, and mask must have the same shape")
+    if margin < 0:
+        raise ValueError("margin must be non-negative")
+
+    losses = []
+    batch_size = scores.shape[0]
+    for row in range(batch_size):
+        valid_scores = scores[row][mask[row]]
+        valid_labels = labels[row][mask[row]]
+        earlier = valid_labels.unsqueeze(1) < valid_labels.unsqueeze(0)
+        if earlier.any():
+            score_deltas = valid_scores.unsqueeze(1) - valid_scores.unsqueeze(0)
+            losses.append(torch.relu(margin + score_deltas)[earlier])
+
+    if not losses:
+        raise ValueError("pairwise ranking loss requires at least one ordered pair")
+    return torch.cat(losses).mean()
+
+
 def resolve_torch_device(requested_device: str) -> torch.device:
     device = torch.device(requested_device)
     if device.type == "cuda" and not torch.cuda.is_available():
