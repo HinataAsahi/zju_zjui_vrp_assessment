@@ -11,7 +11,7 @@ torch = pytest.importorskip("torch")
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from scripts.train_priority_model import parse_args  # noqa: E402
+from scripts.train_priority_model import _format_progress_bar, parse_args  # noqa: E402
 
 
 def _write_labeled_instances(path: Path) -> None:
@@ -21,6 +21,11 @@ def _write_labeled_instances(path: Path) -> None:
     ]
     with path.open("wb") as handle:
         pickle.dump(raw_instances, handle)
+
+
+def test_format_progress_bar_shows_fraction_and_percentage():
+    assert _format_progress_bar(1, 4, width=10) == "[##--------] 1/4 25.0%"
+    assert _format_progress_bar(5, 4, width=10) == "[##########] 4/4 100.0%"
 
 
 def test_train_priority_model_cli_writes_checkpoint_and_summary(tmp_path):
@@ -73,7 +78,7 @@ def test_train_priority_model_cli_writes_checkpoint_and_summary(tmp_path):
     assert checkpoint_path.exists()
     assert "[train] device=cpu" in result.stderr
     assert "[epoch 1/1] train_start" in result.stderr
-    assert "[epoch 1/1] batch 1/1" in result.stderr
+    assert "[epoch 1/1] batch 1/1 [########################] 1/1 100.0%" in result.stderr
     assert "[epoch 1/1] validation_start" in result.stderr
     assert "[epoch 1/1] validation_done" in result.stderr
     assert "[epoch 1/1] checkpoint_saved" in result.stderr

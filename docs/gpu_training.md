@@ -40,6 +40,7 @@ python3 -m pytest tests -v
 python3 solve.py --input VRP_project/VRPData/check_data_to_students.pkl --output outputs/predictions.json --device cuda
 
 # 9. 用很小规模 smoke 训练检查训练脚本、数据读取、checkpoint 写入是否正常
+# 训练时会默认显示实时 batch 进度条；如果想降低刷新频率，可额外加 --log-every 20
 python3 scripts/train_priority_model.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --checkpoint-output checkpoints/priority_smoke.pt --summary-output outputs/priority_smoke_summary.json --train-limit 16 --eval-limit 8 --epochs 1 --batch-size 8 --hidden-dim 64 --num-heads 4 --num-layers 1 --dropout 0.1 --device cuda --no-postprocess-eval
 
 # 10. 正式训练第一版客户优先级模型；输出 best checkpoint 和训练摘要

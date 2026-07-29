@@ -65,5 +65,7 @@ cleared, unless the user explicitly changes the workflow.
 - Logs should show at least training start, epoch progress, periodic batch
   progress for long epochs, validation start/end, checkpoint saves, and final
   completion.
+- Prefer a real-time visual progress bar for long training loops, especially
+  per-batch progress within an epoch.
 - Prefer writing progress logs to `stderr` so `stdout` can remain machine-readable
   for final JSON summaries or downstream tooling.

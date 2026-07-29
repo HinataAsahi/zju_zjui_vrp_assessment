@@ -2,6 +2,17 @@
 
 本文件用于按日期简短记录 ZJU/ZJUI VRP assessment 项目的推进情况。
 
+## 2026-07-30
+
+### 今日进展
+
+- 将 priority 训练日志升级为实时 batch 进度条，保留 `stdout` 最终 JSON 输出。
+- 更新 `AGENTS.md`：后续 AI training 代码默认需要终端进度日志和进度条。
+
+### 状态与下一步
+
+- 第二版 `mse_pairwise` 训练结果回收后，继续和默认 heuristic 对比。
+
 ## 2026-07-29
 
 ### 今日进展

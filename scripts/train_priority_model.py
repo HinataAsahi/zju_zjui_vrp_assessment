@@ -73,6 +73,23 @@ def _log(message: str) -> None:
     print(message, file=sys.stderr, flush=True)
 
 
+def _format_progress_bar(current: int, total: int, width: int = 24) -> str:
+    if total <= 0:
+        raise ValueError("total must be positive")
+    bounded_current = min(max(current, 0), total)
+    ratio = bounded_current / total
+    filled = int(width * ratio)
+    return (
+        f"[{'#' * filled}{'-' * (width - filled)}] "
+        f"{bounded_current}/{total} {ratio * 100:.1f}%"
+    )
+
+
+def _progress(message: str, final: bool = False) -> None:
+    end = "\n" if final else ""
+    print(f"\r{message}", file=sys.stderr, end=end, flush=True)
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Train a supervised-imitation priority model for CVRP.",
@@ -100,7 +117,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--num-heads", type=_positive_int, default=4)
     parser.add_argument("--num-layers", type=_positive_int, default=2)
     parser.add_argument("--dropout", type=_dropout_float, default=0.1)
-    parser.add_argument("--log-every", type=_positive_int, default=20)
+    parser.add_argument("--log-every", type=_positive_int, default=1)
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--seed", type=int, default=2026)
     parser.add_argument(
@@ -240,9 +257,12 @@ def train_priority_model(args: argparse.Namespace) -> dict:
                 or batch_index % args.log_every == 0
                 or batch_index == total_batches
             ):
-                _log(
+                _progress(
                     f"[epoch {epoch}/{args.epochs}] "
-                    f"batch {batch_index}/{total_batches} train_loss={loss_value:.6f}"
+                    f"batch {batch_index}/{total_batches} "
+                    f"{_format_progress_bar(batch_index, total_batches)} "
+                    f"train_loss={loss_value:.6f}",
+                    final=batch_index == total_batches,
                 )
 
         train_loss = mean(losses) if losses else 0.0
