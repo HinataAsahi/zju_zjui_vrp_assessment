@@ -71,6 +71,12 @@ def test_train_priority_model_cli_writes_checkpoint_and_summary(tmp_path):
 
     assert result.returncode == 0, result.stderr
     assert checkpoint_path.exists()
+    assert "[train] device=cpu" in result.stderr
+    assert "[epoch 1/1] train_start" in result.stderr
+    assert "[epoch 1/1] batch 1/1" in result.stderr
+    assert "[epoch 1/1] validation_start" in result.stderr
+    assert "[epoch 1/1] validation_done" in result.stderr
+    assert "[epoch 1/1] checkpoint_saved" in result.stderr
     payload = json.loads(summary_path.read_text(encoding="utf-8"))
     stdout_payload = json.loads(result.stdout)
     assert stdout_payload["best_validation"]["instance_count"] == 2

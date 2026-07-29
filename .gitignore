@@ -9,6 +9,7 @@ __pycache__/
 
 # Local raw data
 VRP_project/
+VRP_project.zip
 
 # Local experiment outputs
 outputs/

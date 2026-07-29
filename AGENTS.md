@@ -57,3 +57,13 @@ cleared, unless the user explicitly changes the workflow.
 - Use focused commits with conventional-style messages, such as
   `docs: ...`, `feat: ...`, `fix: ...`, or `test: ...`.
 - Push completed commits to the configured GitHub remote when appropriate.
+
+## AI Training Logging
+
+- Any AI training script or training-related code must include terminal progress
+  logging by default.
+- Logs should show at least training start, epoch progress, periodic batch
+  progress for long epochs, validation start/end, checkpoint saves, and final
+  completion.
+- Prefer writing progress logs to `stderr` so `stdout` can remain machine-readable
+  for final JSON summaries or downstream tooling.

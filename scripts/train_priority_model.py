@@ -7,6 +7,7 @@ import json
 import math
 import random
 import sys
+import time
 from pathlib import Path
 from statistics import mean
 
@@ -67,6 +68,10 @@ def _dropout_float(value: str) -> float:
     return parsed
 
 
+def _log(message: str) -> None:
+    print(message, file=sys.stderr, flush=True)
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Train a supervised-imitation priority model for CVRP.",
@@ -87,6 +92,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--num-heads", type=_positive_int, default=4)
     parser.add_argument("--num-layers", type=_positive_int, default=2)
     parser.add_argument("--dropout", type=_dropout_float, default=0.1)
+    parser.add_argument("--log-every", type=_positive_int, default=20)
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--seed", type=int, default=2026)
     parser.add_argument(
@@ -170,11 +176,21 @@ def train_priority_model(args: argparse.Namespace) -> dict:
     history = []
     best_validation: dict | None = None
     best_cost = float("inf")
+    total_batches = len(train_loader)
+    _log(
+        "[train] "
+        f"device={device} train_instances={len(train_instances)} "
+        f"validation_instances={len(validation_instances)} epochs={args.epochs} "
+        f"batch_size={args.batch_size} eval_limit={args.eval_limit} "
+        f"postprocess_eval={args.postprocess_eval}"
+    )
 
     for epoch in range(1, args.epochs + 1):
+        epoch_start = time.perf_counter()
         model.train()
         losses = []
-        for batch in train_loader:
+        _log(f"[epoch {epoch}/{args.epochs}] train_start batches={total_batches}")
+        for batch_index, batch in enumerate(train_loader, start=1):
             features = batch["features"].to(device)
             labels = batch["labels"].to(device)
             mask = batch["mask"].to(device)
@@ -186,8 +202,24 @@ def train_priority_model(args: argparse.Namespace) -> dict:
             if args.grad_clip > 0:
                 torch.nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
             optimizer.step()
-            losses.append(float(loss.detach().cpu()))
+            loss_value = float(loss.detach().cpu())
+            losses.append(loss_value)
+            if (
+                batch_index == 1
+                or batch_index % args.log_every == 0
+                or batch_index == total_batches
+            ):
+                _log(
+                    f"[epoch {epoch}/{args.epochs}] "
+                    f"batch {batch_index}/{total_batches} train_loss={loss_value:.6f}"
+                )
 
+        train_loss = mean(losses) if losses else 0.0
+        _log(
+            f"[epoch {epoch}/{args.epochs}] "
+            f"validation_start limit={args.eval_limit} "
+            f"postprocess={args.postprocess_eval} train_loss={train_loss:.6f}"
+        )
         summary, _solutions = evaluate_priority_model_instances(
             model,
             validation_instances,
@@ -195,10 +227,22 @@ def train_priority_model(args: argparse.Namespace) -> dict:
             limit=args.eval_limit,
             postprocess=args.postprocess_eval,
         )
+        gap_text = (
+            f"{summary.average_gap:.6f}"
+            if summary.average_gap is not None
+            else "null"
+        )
+        _log(
+            f"[epoch {epoch}/{args.epochs}] validation_done "
+            f"feasible={summary.feasible_count}/{summary.instance_count} "
+            f"average_cost={summary.average_cost:.6f} "
+            f"average_gap={gap_text} "
+            f"elapsed_seconds={time.perf_counter() - epoch_start:.2f}"
+        )
         validation_payload = evaluation_summary_to_dict(summary)
         record = {
             "epoch": epoch,
-            "train_loss": mean(losses) if losses else 0.0,
+            "train_loss": train_loss,
             "validation": validation_payload,
         }
         history.append(record)
@@ -218,6 +262,10 @@ def train_priority_model(args: argparse.Namespace) -> dict:
                 args,
                 best_validation,
             )
+            _log(
+                f"[epoch {epoch}/{args.epochs}] "
+                f"checkpoint_saved path={args.checkpoint_output}"
+            )
 
     if best_validation is None:
         raise RuntimeError("training did not produce a checkpoint")
@@ -236,6 +284,11 @@ def train_priority_model(args: argparse.Namespace) -> dict:
             json.dumps(result, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",
         )
+    _log(
+        "[train] done "
+        f"best_epoch={best_validation['epoch']} "
+        f"best_average_cost={best_validation['average_cost']:.6f}"
+    )
     return result
 
 
