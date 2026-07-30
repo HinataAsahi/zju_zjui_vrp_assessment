@@ -261,3 +261,56 @@ python3 scripts/train_priority_model.py --train-input VRP_project/VRPData/train_
   improved early and then plateaued.
 - The next learned-priority experiment should use a ranking-aware objective,
   starting with `mse_pairwise`, while keeping the heuristic default unchanged.
+
+## 2026-07-30: Supervised Imitation Priority Model, MSE + Pairwise Rank Loss
+
+### Purpose
+
+This run tests whether adding pairwise ranking pressure improves the learned
+customer-priority order compared with the first MSE-only priority model.
+
+### Training Setup
+
+```bash
+python3 scripts/train_priority_model.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --checkpoint-output checkpoints/priority_mse_pairwise_rank.pt --summary-output outputs/priority_mse_pairwise_rank_summary.json --epochs 50 --batch-size 64 --hidden-dim 128 --num-heads 4 --num-layers 2 --dropout 0.1 --learning-rate 0.001 --weight-decay 0.0001 --eval-limit 100 --device cuda --postprocess-eval --loss mse_pairwise --pairwise-weight 0.5 --pairwise-margin 0.1
+```
+
+### Training Result
+
+| Metric | Value |
+| --- | ---: |
+| Train instances | 7000 |
+| Validation instances available | 1000 |
+| Validation instances per epoch | 100 |
+| Best epoch | 47 |
+| Best validation feasible count | 100/100 |
+| Best validation average_cost | 12.176409600231384 |
+| Best validation average_gap | 0.1555420716601009 |
+
+### Local Re-Evaluation
+
+| Method | Validation scope | Feasible | Average cost | Average gap |
+| --- | --- | ---: | ---: | ---: |
+| Tuned heuristic default | first 100 | 100/100 | 11.424134539766737 | 0.08426480064303492 |
+| MSE priority model | first 100 | 100/100 | 12.215777101910927 | 0.16126667122853794 |
+| MSE + pairwise priority model | first 100 | 100/100 | 12.182751773028457 | 0.15613505108262565 |
+| Tuned heuristic default | full 1000 | 1000/1000 | 11.513862926474488 | 0.08817281823708832 |
+| MSE + pairwise priority model | full 1000 | 1000/1000 | 12.274470971742279 | 0.1609528098566702 |
+
+### Check Data Sanity
+
+| Output | Feasible | Average cost | Average gap |
+| --- | ---: | ---: | ---: |
+| `outputs/predictions.json` | 1500/1500 | 13.976807065714844 | N/A |
+| `outputs/predictions_priority_model.json` | 1500/1500 | 15.618431050502089 | N/A |
+| `outputs/predictions_priority_mse_pairwise.json` | 1500/1500 | 15.552168765777415 | N/A |
+
+### Conclusion
+
+- Pairwise ranking slightly improves the learned priority model compared with
+  the first MSE-only run.
+- The learned priority model is still far weaker than the tuned heuristic
+  default on validation and check-data sanity metrics.
+- Do not replace the default `solve.py` heuristic. Further learned-priority
+  work needs a larger methodological change rather than another small loss
+  adjustment.

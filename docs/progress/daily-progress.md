@@ -8,10 +8,11 @@
 
 - 将 priority 训练日志升级为实时 batch 进度条，保留 `stdout` 最终 JSON 输出。
 - 更新 `AGENTS.md`：后续 AI training 代码默认需要终端进度日志和进度条。
+- 回收第二版 `mse_pairwise` 训练结果：略优于 MSE 第一版，但仍明显弱于 heuristic 默认。
 
 ### 状态与下一步
 
-- 第二版 `mse_pairwise` 训练结果回收后，继续和默认 heuristic 对比。
+- 默认提交继续使用 heuristic；priority 学习路线暂不替代默认方法。
 
 ## 2026-07-29
 
