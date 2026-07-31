@@ -229,13 +229,7 @@ def train_priority_rl(args: argparse.Namespace) -> dict:
         shuffle=True,
         collate_fn=collate_priority_samples,
         generator=generator,
-        drop_last=args.samples_per_instance == 1,
     )
-    if len(train_loader) == 0:
-        raise ValueError(
-            "training set must contain enough instances for the requested "
-            "batch-size and samples-per-instance"
-        )
     instances_by_id = {instance.instance_id: instance for instance in train_instances}
 
     model, config = _build_model(args, device)
@@ -264,11 +258,22 @@ def train_priority_rl(args: argparse.Namespace) -> dict:
         model.train()
         losses: list[float] = []
         sampled_costs: list[float] = []
+        trainable_batches = 0
         _log(f"[rl-epoch {epoch}/{args.epochs}] train_start batches={total_batches}")
 
         for batch_index, batch in enumerate(train_loader, start=1):
             features = batch["features"].to(device)
             mask = batch["mask"].to(device)
+            actual_trajectory_count = features.shape[0] * args.samples_per_instance
+            if actual_trajectory_count <= 1:
+                _progress(
+                    f"[rl-epoch {epoch}/{args.epochs}] "
+                    f"batch {batch_index}/{total_batches} "
+                    "skipped singleton trajectory batch",
+                    final=True,
+                )
+                continue
+            trainable_batches += 1
             selected_instances = _batch_instances(instances_by_id, batch["instance_ids"])
 
             optimizer.zero_grad(set_to_none=True)
@@ -308,6 +313,10 @@ def train_priority_rl(args: argparse.Namespace) -> dict:
                     final=batch_index == total_batches,
                 )
 
+        if trainable_batches == 0:
+            raise ValueError(
+                "training set must produce at least one non-singleton trajectory batch"
+            )
         train_loss = mean(losses) if losses else 0.0
         average_sampled_cost = mean(sampled_costs) if sampled_costs else 0.0
         _log(

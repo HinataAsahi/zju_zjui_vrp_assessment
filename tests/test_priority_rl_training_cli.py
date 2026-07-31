@@ -211,9 +211,70 @@ def test_train_priority_rl_cli_rejects_singleton_runtime_batch(tmp_path):
 
     assert result.returncode == 1
     assert (
-        "training set must contain enough instances for the requested "
-        "batch-size and samples-per-instance"
-    ) in result.stderr
+        "[rl-epoch 1/1] batch 1/1 skipped singleton trajectory batch"
+        in result.stderr
+    )
+    assert (
+        "training set must produce at least one non-singleton trajectory batch"
+        in result.stderr
+    )
+
+
+def test_train_priority_rl_cli_accepts_valid_partial_runtime_batch(tmp_path):
+    train_path = tmp_path / "train.pkl"
+    validation_path = tmp_path / "validation.pkl"
+    checkpoint_path = tmp_path / "checkpoints" / "priority_rl.pt"
+    _write_labeled_instances(train_path)
+    _write_labeled_instances(validation_path)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "train_priority_rl.py"),
+            "--train-input",
+            str(train_path),
+            "--validation-input",
+            str(validation_path),
+            "--checkpoint-output",
+            str(checkpoint_path),
+            "--epochs",
+            "1",
+            "--batch-size",
+            "3",
+            "--samples-per-instance",
+            "1",
+            "--train-limit",
+            "2",
+            "--temperature",
+            "1.0",
+            "--hidden-dim",
+            "16",
+            "--num-heads",
+            "4",
+            "--num-layers",
+            "1",
+            "--dropout",
+            "0",
+            "--eval-limit",
+            "2",
+            "--device",
+            "cpu",
+            "--seed",
+            "11",
+            "--no-postprocess-reward",
+            "--no-postprocess-eval",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert checkpoint_path.exists()
+    assert "skipped singleton trajectory batch" not in result.stderr
+    stdout_payload = json.loads(result.stdout)
+    assert stdout_payload["train_instances"] == 2
 
 
 def test_train_priority_rl_rejects_invalid_temperature():
