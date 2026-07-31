@@ -2,6 +2,14 @@
 
 本文件用于按日期简短记录 ZJU/ZJUI VRP assessment 项目的推进情况。
 
+## 2026-07-31
+
+- 设计并实现 priority RL 微调入口，完成本地 smoke 验证。
+
+### 状态与下一步
+
+- 下一步在 RTX 4060 上从 pairwise imitation checkpoint 继续正式 RL 微调；默认提交仍使用 heuristic。
+
 ## 2026-07-30
 
 ### 今日进展

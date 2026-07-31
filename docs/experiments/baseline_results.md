@@ -323,13 +323,20 @@ This experiment tests whether REINFORCE finetuning can improve the
 `mse_pairwise` learned-priority model by directly rewarding lower route cost.
 The default `solve.py` heuristic remains unchanged.
 
-### Planned Commands
+### Local Smoke Result
 
-Smoke:
-
-```bash
-python3 scripts/train_priority_rl.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --init-checkpoint checkpoints/priority_imitation/priority_mse_pairwise_rank.pt --checkpoint-output checkpoints/priority_rl/priority_rl_smoke.pt --summary-output outputs/priority_rl/smoke_summary.json --train-limit 16 --eval-limit 8 --epochs 1 --batch-size 8 --samples-per-instance 2 --temperature 1.0 --learning-rate 0.00001 --device cuda --no-postprocess-reward --no-postprocess-eval
-```
+| Metric | Value |
+| --- | ---: |
+| Train instances | 16 |
+| Validation instances per epoch | 8 |
+| Epochs | 1 |
+| Samples per instance | 2 |
+| Postprocess reward | false |
+| Postprocess eval | false |
+| Best epoch | 1 |
+| Best validation feasible count | 8/8 |
+| Best validation average_cost | 27.658878074400118 |
+| Best validation average_gap | 1.6792680066323138 |
 
 Formal finetuning:
 
