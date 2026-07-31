@@ -159,6 +159,63 @@ def test_train_priority_rl_cli_can_initialize_from_priority_checkpoint(tmp_path)
     assert checkpoint["config"]["hidden_dim"] == 16
 
 
+def test_train_priority_rl_cli_rejects_singleton_runtime_batch(tmp_path):
+    train_path = tmp_path / "train.pkl"
+    validation_path = tmp_path / "validation.pkl"
+    checkpoint_path = tmp_path / "checkpoints" / "priority_rl.pt"
+    _write_labeled_instances(train_path)
+    _write_labeled_instances(validation_path)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "train_priority_rl.py"),
+            "--train-input",
+            str(train_path),
+            "--validation-input",
+            str(validation_path),
+            "--checkpoint-output",
+            str(checkpoint_path),
+            "--epochs",
+            "1",
+            "--batch-size",
+            "2",
+            "--samples-per-instance",
+            "1",
+            "--train-limit",
+            "1",
+            "--temperature",
+            "1.0",
+            "--hidden-dim",
+            "16",
+            "--num-heads",
+            "4",
+            "--num-layers",
+            "1",
+            "--dropout",
+            "0",
+            "--eval-limit",
+            "2",
+            "--device",
+            "cpu",
+            "--seed",
+            "11",
+            "--no-postprocess-reward",
+            "--no-postprocess-eval",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert result.returncode == 1
+    assert (
+        "training set must contain enough instances for the requested "
+        "batch-size and samples-per-instance"
+    ) in result.stderr
+
+
 def test_train_priority_rl_rejects_invalid_temperature():
     with pytest.raises(SystemExit):
         parse_args(

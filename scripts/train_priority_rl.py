@@ -229,7 +229,13 @@ def train_priority_rl(args: argparse.Namespace) -> dict:
         shuffle=True,
         collate_fn=collate_priority_samples,
         generator=generator,
+        drop_last=args.samples_per_instance == 1,
     )
+    if len(train_loader) == 0:
+        raise ValueError(
+            "training set must contain enough instances for the requested "
+            "batch-size and samples-per-instance"
+        )
     instances_by_id = {instance.instance_id: instance for instance in train_instances}
 
     model, config = _build_model(args, device)
