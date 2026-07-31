@@ -130,7 +130,10 @@ def test_reinforce_policy_loss_uses_batch_average_baseline_and_backpropagates():
     loss, advantages = reinforce_policy_loss(log_probs, rewards)
     loss.backward()
 
-    assert advantages.tolist() == pytest.approx([[-1.0, 1.0]])
+    torch.testing.assert_close(
+        advantages,
+        torch.tensor([[-1.0, 1.0]], dtype=advantages.dtype),
+    )
     assert loss.ndim == 0
     assert log_probs.grad is not None
     assert torch.isfinite(log_probs.grad).all()
