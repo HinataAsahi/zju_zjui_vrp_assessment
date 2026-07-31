@@ -189,3 +189,21 @@ def test_train_priority_rl_rejects_zero_samples_per_instance():
                 "0",
             ]
         )
+
+
+def test_train_priority_rl_rejects_single_trajectory_batch():
+    with pytest.raises(SystemExit):
+        parse_args(
+            [
+                "--train-input",
+                "train.pkl",
+                "--validation-input",
+                "validation.pkl",
+                "--checkpoint-output",
+                "priority_rl.pt",
+                "--batch-size",
+                "1",
+                "--samples-per-instance",
+                "1",
+            ]
+        )

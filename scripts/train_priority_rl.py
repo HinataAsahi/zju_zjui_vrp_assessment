@@ -73,6 +73,15 @@ def _dropout_float(value: str) -> float:
     return parsed
 
 
+def _validate_args(args: argparse.Namespace) -> argparse.Namespace:
+    if args.batch_size * args.samples_per_instance <= 1:
+        raise argparse.ArgumentTypeError(
+            "batch-size * samples-per-instance must be greater than 1 "
+            "for REINFORCE baseline"
+        )
+    return args
+
+
 def _log(message: str) -> None:
     print(message, file=sys.stderr, flush=True)
 
@@ -132,7 +141,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=True,
         help="Use heuristic postprocessing during validation.",
     )
-    return parser.parse_args(argv)
+    try:
+        return _validate_args(parser.parse_args(argv))
+    except argparse.ArgumentTypeError as error:
+        parser.error(str(error))
 
 
 def _load_limited_instances(path: str, limit: int | None) -> list[CVRPInstance]:
