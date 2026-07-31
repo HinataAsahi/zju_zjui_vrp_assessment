@@ -18,6 +18,63 @@ checkpoints/
 旧版已经生成在 `outputs/` 根目录的文件可以保留作为历史证据。新命令统一写入
 分层目录。
 
+## 现在还需要执行的命令
+
+如果你已经在 RTX 4060 笔记本上执行过前面的 clone、数据复制、MSE 训练和
+`mse_pairwise` 训练，现在只需要从这里继续。下面命令会保留旧文件，并尽量把旧路径
+结果迁移到新的分层目录。
+
+```bash
+# 1. 进入你已经拉取好的仓库
+cd zju_zjui_vrp_assessment
+
+# 2. 同步最新代码
+git pull origin main
+
+# 3. 创建新的分层输出目录
+mkdir -p outputs/heuristic outputs/priority_imitation outputs/priority_rl checkpoints/priority_imitation checkpoints/priority_rl
+
+# 4. 如果之前的 supervised imitation 结果还在旧根目录，迁移到新目录
+# 如果目标文件已经存在，mv -n 不会覆盖
+if [ -f checkpoints/priority_mse_rank.pt ]; then mv -n checkpoints/priority_mse_rank.pt checkpoints/priority_imitation/priority_mse_rank.pt; fi
+if [ -f checkpoints/priority_mse_pairwise_rank.pt ]; then mv -n checkpoints/priority_mse_pairwise_rank.pt checkpoints/priority_imitation/priority_mse_pairwise_rank.pt; fi
+if [ -f outputs/priority_mse_rank_summary.json ]; then mv -n outputs/priority_mse_rank_summary.json outputs/priority_imitation/priority_mse_rank_summary.json; fi
+if [ -f outputs/priority_mse_pairwise_rank_summary.json ]; then mv -n outputs/priority_mse_pairwise_rank_summary.json outputs/priority_imitation/priority_mse_pairwise_rank_summary.json; fi
+if [ -f outputs/predictions_priority_model.json ]; then mv -n outputs/predictions_priority_model.json outputs/priority_imitation/predictions_priority_mse.json; fi
+if [ -f outputs/predictions_priority_mse_pairwise.json ]; then mv -n outputs/predictions_priority_mse_pairwise.json outputs/priority_imitation/predictions_priority_mse_pairwise.json; fi
+
+# 5. 检查当前 RL 训练需要的文件是否存在
+python3 -c "from pathlib import Path; files=['VRP_project/VRPData/train_data.pkl','VRP_project/VRPData/validation_data.pkl','VRP_project/VRPData/check_data_to_students.pkl','checkpoints/priority_imitation/priority_mse_pairwise_rank.pt']; print({name: Path(name).exists() for name in files})"
+
+# 6. 检查 CUDA 是否可用
+python3 -c "import torch; print('torch=', torch.__version__); print('cuda_available=', torch.cuda.is_available()); print('device_count=', torch.cuda.device_count())"
+
+# 7. 跑完整测试，确认最新代码在 4060 环境中正常
+python3 -m pytest tests -v
+
+# 8. 强化学习微调 smoke：先确认 RL 训练链路能跑通
+python3 scripts/train_priority_rl.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --init-checkpoint checkpoints/priority_imitation/priority_mse_pairwise_rank.pt --checkpoint-output checkpoints/priority_rl/priority_rl_smoke.pt --summary-output outputs/priority_rl/smoke_summary.json --train-limit 16 --eval-limit 8 --epochs 1 --batch-size 8 --samples-per-instance 2 --temperature 1.0 --learning-rate 0.00001 --device cuda --no-postprocess-reward --no-postprocess-eval
+
+# 9. 强化学习正式微调：从 pairwise imitation checkpoint 继续训练
+python3 scripts/train_priority_rl.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --init-checkpoint checkpoints/priority_imitation/priority_mse_pairwise_rank.pt --checkpoint-output checkpoints/priority_rl/priority_rl_finetune.pt --summary-output outputs/priority_rl/rl_finetune_summary.json --epochs 20 --batch-size 32 --samples-per-instance 2 --temperature 1.0 --learning-rate 0.00001 --weight-decay 0.0001 --eval-limit 100 --device cuda --postprocess-reward --postprocess-eval
+
+# 10. 在完整 validation 上评估 RL 微调模型
+python3 scripts/evaluate_priority_model.py --input VRP_project/VRPData/validation_data.pkl --checkpoint checkpoints/priority_rl/priority_rl_finetune.pt --limit 1000 --device cuda --postprocess
+
+# 11. 对官方 check 数据生成 RL 预测结果
+python3 scripts/evaluate_priority_model.py --input VRP_project/VRPData/check_data_to_students.pkl --checkpoint checkpoints/priority_rl/priority_rl_finetune.pt --output outputs/priority_rl/predictions_priority_rl.json --device cuda --postprocess
+```
+
+完成后，把这三个文件复制回当前电脑同样的相对路径：
+
+```text
+checkpoints/priority_rl/priority_rl_finetune.pt
+outputs/priority_rl/rl_finetune_summary.json
+outputs/priority_rl/predictions_priority_rl.json
+```
+
+## 完整流程（从零开始）
+
 ```bash
 # 以下命令用于在 RTX 4060 笔记本上从拉取仓库开始，运行到得到训练、评估和预测结果
 # 本文只给项目运行命令，不包含 PyTorch 安装步骤
