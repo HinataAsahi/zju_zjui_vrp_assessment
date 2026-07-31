@@ -159,6 +159,114 @@ def test_train_priority_rl_cli_can_initialize_from_priority_checkpoint(tmp_path)
     assert checkpoint["config"]["hidden_dim"] == 16
 
 
+def test_train_priority_rl_cli_resumes_from_last_checkpoint_epoch(tmp_path):
+    train_path = tmp_path / "train.pkl"
+    validation_path = tmp_path / "validation.pkl"
+    best_checkpoint_path = tmp_path / "checkpoints" / "priority_rl_best.pt"
+    last_checkpoint_path = tmp_path / "checkpoints" / "priority_rl_last.pt"
+    summary_path = tmp_path / "outputs" / "priority_rl_summary.json"
+    _write_labeled_instances(train_path)
+    _write_labeled_instances(validation_path)
+
+    first_result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "train_priority_rl.py"),
+            "--train-input",
+            str(train_path),
+            "--validation-input",
+            str(validation_path),
+            "--checkpoint-output",
+            str(best_checkpoint_path),
+            "--last-checkpoint-output",
+            str(last_checkpoint_path),
+            "--summary-output",
+            str(summary_path),
+            "--epochs",
+            "1",
+            "--batch-size",
+            "2",
+            "--samples-per-instance",
+            "2",
+            "--temperature",
+            "1.0",
+            "--hidden-dim",
+            "16",
+            "--num-heads",
+            "4",
+            "--num-layers",
+            "1",
+            "--dropout",
+            "0",
+            "--eval-limit",
+            "2",
+            "--device",
+            "cpu",
+            "--seed",
+            "11",
+            "--no-postprocess-reward",
+            "--no-postprocess-eval",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert first_result.returncode == 0, first_result.stderr
+    assert last_checkpoint_path.exists()
+
+    resumed_result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "train_priority_rl.py"),
+            "--train-input",
+            str(train_path),
+            "--validation-input",
+            str(validation_path),
+            "--resume-checkpoint",
+            str(last_checkpoint_path),
+            "--checkpoint-output",
+            str(best_checkpoint_path),
+            "--last-checkpoint-output",
+            str(last_checkpoint_path),
+            "--summary-output",
+            str(summary_path),
+            "--epochs",
+            "2",
+            "--batch-size",
+            "2",
+            "--samples-per-instance",
+            "2",
+            "--temperature",
+            "1.0",
+            "--eval-limit",
+            "2",
+            "--device",
+            "cpu",
+            "--seed",
+            "11",
+            "--no-postprocess-reward",
+            "--no-postprocess-eval",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert resumed_result.returncode == 0, resumed_result.stderr
+    assert "[rl-train] resume_checkpoint=" in resumed_result.stderr
+    assert "[rl-epoch 1/2] train_start" not in resumed_result.stderr
+    assert "[rl-epoch 2/2] train_start" in resumed_result.stderr
+    summary_payload = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert [record["epoch"] for record in summary_payload["history"]] == [1, 2]
+    last_checkpoint = torch.load(last_checkpoint_path, map_location="cpu")
+    assert last_checkpoint["epoch"] == 2
+    assert [record["epoch"] for record in last_checkpoint["history"]] == [1, 2]
+    assert last_checkpoint["resume_checkpoint"] == str(last_checkpoint_path)
+
+
 def test_train_priority_rl_cli_rejects_singleton_runtime_batch(tmp_path):
     train_path = tmp_path / "train.pkl"
     validation_path = tmp_path / "validation.pkl"

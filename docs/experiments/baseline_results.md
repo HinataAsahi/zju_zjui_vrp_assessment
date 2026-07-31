@@ -341,7 +341,7 @@ The default `solve.py` heuristic remains unchanged.
 Formal finetuning:
 
 ```bash
-python3 scripts/train_priority_rl.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --init-checkpoint checkpoints/priority_imitation/priority_mse_pairwise_rank.pt --checkpoint-output checkpoints/priority_rl/priority_rl_finetune.pt --summary-output outputs/priority_rl/rl_finetune_summary.json --epochs 20 --batch-size 32 --samples-per-instance 2 --temperature 1.0 --learning-rate 0.00001 --weight-decay 0.0001 --eval-limit 100 --device cuda --postprocess-reward --postprocess-eval
+python3 scripts/train_priority_rl.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --init-checkpoint checkpoints/priority_imitation/priority_mse_pairwise_rank.pt --checkpoint-output checkpoints/priority_rl/priority_rl_finetune.pt --last-checkpoint-output checkpoints/priority_rl/priority_rl_finetune_last.pt --summary-output outputs/priority_rl/rl_finetune_summary.json --epochs 20 --batch-size 32 --samples-per-instance 2 --temperature 1.0 --learning-rate 0.00001 --weight-decay 0.0001 --eval-limit 100 --device cuda --postprocess-reward --postprocess-eval
 ```
 
 ### Decision Rule

@@ -53,10 +53,22 @@ python3 -c "import torch; print('torch=', torch.__version__); print('cuda_availa
 python3 -m pytest tests -v
 
 # 8. 强化学习微调 smoke：先确认 RL 训练链路能跑通
-python3 scripts/train_priority_rl.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --init-checkpoint checkpoints/priority_imitation/priority_mse_pairwise_rank.pt --checkpoint-output checkpoints/priority_rl/priority_rl_smoke.pt --summary-output outputs/priority_rl/smoke_summary.json --train-limit 16 --eval-limit 8 --epochs 1 --batch-size 8 --samples-per-instance 2 --temperature 1.0 --learning-rate 0.00001 --device cuda --no-postprocess-reward --no-postprocess-eval
+python3 scripts/train_priority_rl.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --init-checkpoint checkpoints/priority_imitation/priority_mse_pairwise_rank.pt --checkpoint-output checkpoints/priority_rl/priority_rl_smoke.pt --last-checkpoint-output checkpoints/priority_rl/priority_rl_smoke_last.pt --summary-output outputs/priority_rl/smoke_summary.json --train-limit 16 --eval-limit 8 --epochs 1 --batch-size 8 --samples-per-instance 2 --temperature 1.0 --learning-rate 0.00001 --device cuda --no-postprocess-reward --no-postprocess-eval
 
 # 9. 强化学习正式微调：从 pairwise imitation checkpoint 继续训练
-python3 scripts/train_priority_rl.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --init-checkpoint checkpoints/priority_imitation/priority_mse_pairwise_rank.pt --checkpoint-output checkpoints/priority_rl/priority_rl_finetune.pt --summary-output outputs/priority_rl/rl_finetune_summary.json --epochs 20 --batch-size 32 --samples-per-instance 2 --temperature 1.0 --learning-rate 0.00001 --weight-decay 0.0001 --eval-limit 100 --device cuda --postprocess-reward --postprocess-eval
+python3 scripts/train_priority_rl.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --init-checkpoint checkpoints/priority_imitation/priority_mse_pairwise_rank.pt --checkpoint-output checkpoints/priority_rl/priority_rl_finetune.pt --last-checkpoint-output checkpoints/priority_rl/priority_rl_finetune_last.pt --summary-output outputs/priority_rl/rl_finetune_summary.json --epochs 20 --batch-size 32 --samples-per-instance 2 --temperature 1.0 --learning-rate 0.00001 --weight-decay 0.0001 --eval-limit 100 --device cuda --postprocess-reward --postprocess-eval
+
+# 9B. 如果拉取最新代码后的 RL 训练再次中断，用 last checkpoint 真正续训
+# --epochs 20 表示目标总轮次；如果 last checkpoint 已到 epoch 6，会继续跑 epoch 7 到 20
+python3 scripts/train_priority_rl.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --resume-checkpoint checkpoints/priority_rl/priority_rl_finetune_last.pt --checkpoint-output checkpoints/priority_rl/priority_rl_finetune.pt --last-checkpoint-output checkpoints/priority_rl/priority_rl_finetune_last.pt --summary-output outputs/priority_rl/rl_finetune_summary.json --epochs 20 --batch-size 32 --samples-per-instance 2 --temperature 1.0 --learning-rate 0.00001 --weight-decay 0.0001 --eval-limit 100 --device cuda --postprocess-reward --postprocess-eval
+
+# 9C. 如果你当前正在跑的是旧代码，且它中断后只有 best checkpoint，没有 last checkpoint
+# 先拉取最新代码；如果 priority_rl_finetune.pt 已经存在，就从它恢复
+git pull origin main
+python3 scripts/train_priority_rl.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --resume-checkpoint checkpoints/priority_rl/priority_rl_finetune.pt --checkpoint-output checkpoints/priority_rl/priority_rl_finetune.pt --last-checkpoint-output checkpoints/priority_rl/priority_rl_finetune_last.pt --summary-output outputs/priority_rl/rl_finetune_summary.json --epochs 20 --batch-size 32 --samples-per-instance 2 --temperature 1.0 --learning-rate 0.00001 --weight-decay 0.0001 --eval-limit 100 --device cuda --postprocess-reward --postprocess-eval
+
+# 如果旧代码在第一个 checkpoint_saved 之前就中断，priority_rl_finetune.pt 不存在
+# 这种情况不能恢复 RL 进度，重新执行第 9 步即可
 
 # 10. 在完整 validation 上评估 RL 微调模型
 python3 scripts/evaluate_priority_model.py --input VRP_project/VRPData/validation_data.pkl --checkpoint checkpoints/priority_rl/priority_rl_finetune.pt --limit 1000 --device cuda --postprocess
@@ -65,10 +77,11 @@ python3 scripts/evaluate_priority_model.py --input VRP_project/VRPData/validatio
 python3 scripts/evaluate_priority_model.py --input VRP_project/VRPData/check_data_to_students.pkl --checkpoint checkpoints/priority_rl/priority_rl_finetune.pt --output outputs/priority_rl/predictions_priority_rl.json --device cuda --postprocess
 ```
 
-完成后，把这三个文件复制回当前电脑同样的相对路径：
+完成后，把这四个文件复制回当前电脑同样的相对路径：
 
 ```text
 checkpoints/priority_rl/priority_rl_finetune.pt
+checkpoints/priority_rl/priority_rl_finetune_last.pt
 outputs/priority_rl/rl_finetune_summary.json
 outputs/priority_rl/predictions_priority_rl.json
 ```
@@ -141,10 +154,10 @@ python3 scripts/evaluate_priority_model.py --input VRP_project/VRPData/check_dat
 # 第二版 priority_mse_pairwise_rank.pt 也必须通过同样判断，不能只看训练 loss
 
 # 16. 强化学习微调 smoke：先检查 RL 训练脚本是否能跑通
-python3 scripts/train_priority_rl.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --init-checkpoint checkpoints/priority_imitation/priority_mse_pairwise_rank.pt --checkpoint-output checkpoints/priority_rl/priority_rl_smoke.pt --summary-output outputs/priority_rl/smoke_summary.json --train-limit 16 --eval-limit 8 --epochs 1 --batch-size 8 --samples-per-instance 2 --temperature 1.0 --learning-rate 0.00001 --device cuda --no-postprocess-reward --no-postprocess-eval
+python3 scripts/train_priority_rl.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --init-checkpoint checkpoints/priority_imitation/priority_mse_pairwise_rank.pt --checkpoint-output checkpoints/priority_rl/priority_rl_smoke.pt --last-checkpoint-output checkpoints/priority_rl/priority_rl_smoke_last.pt --summary-output outputs/priority_rl/smoke_summary.json --train-limit 16 --eval-limit 8 --epochs 1 --batch-size 8 --samples-per-instance 2 --temperature 1.0 --learning-rate 0.00001 --device cuda --no-postprocess-reward --no-postprocess-eval
 
 # 17. 强化学习正式微调：从 pairwise imitation checkpoint 继续训练
-python3 scripts/train_priority_rl.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --init-checkpoint checkpoints/priority_imitation/priority_mse_pairwise_rank.pt --checkpoint-output checkpoints/priority_rl/priority_rl_finetune.pt --summary-output outputs/priority_rl/rl_finetune_summary.json --epochs 20 --batch-size 32 --samples-per-instance 2 --temperature 1.0 --learning-rate 0.00001 --weight-decay 0.0001 --eval-limit 100 --device cuda --postprocess-reward --postprocess-eval
+python3 scripts/train_priority_rl.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --init-checkpoint checkpoints/priority_imitation/priority_mse_pairwise_rank.pt --checkpoint-output checkpoints/priority_rl/priority_rl_finetune.pt --last-checkpoint-output checkpoints/priority_rl/priority_rl_finetune_last.pt --summary-output outputs/priority_rl/rl_finetune_summary.json --epochs 20 --batch-size 32 --samples-per-instance 2 --temperature 1.0 --learning-rate 0.00001 --weight-decay 0.0001 --eval-limit 100 --device cuda --postprocess-reward --postprocess-eval
 
 # 18. 在完整 validation 上评估 RL 微调模型
 python3 scripts/evaluate_priority_model.py --input VRP_project/VRPData/validation_data.pkl --checkpoint checkpoints/priority_rl/priority_rl_finetune.pt --limit 1000 --device cuda --postprocess
@@ -159,6 +172,7 @@ python3 scripts/evaluate_priority_model.py --input VRP_project/VRPData/check_dat
 
 ```text
 checkpoints/priority_rl/priority_rl_finetune.pt
+checkpoints/priority_rl/priority_rl_finetune_last.pt
 outputs/priority_rl/rl_finetune_summary.json
 outputs/priority_rl/predictions_priority_rl.json
 ```
@@ -167,5 +181,6 @@ outputs/priority_rl/predictions_priority_rl.json
 
 ```text
 checkpoints/priority_rl/priority_rl_smoke.pt
+checkpoints/priority_rl/priority_rl_smoke_last.pt
 outputs/priority_rl/smoke_summary.json
 ```

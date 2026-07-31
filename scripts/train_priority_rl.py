@@ -79,6 +79,17 @@ def _validate_args(args: argparse.Namespace) -> argparse.Namespace:
             "batch-size * samples-per-instance must be greater than 1 "
             "for REINFORCE baseline"
         )
+    if args.init_checkpoint and args.resume_checkpoint:
+        raise argparse.ArgumentTypeError(
+            "use either --init-checkpoint or --resume-checkpoint, not both"
+        )
+    if args.last_checkpoint_output and (
+        Path(args.last_checkpoint_output).expanduser().resolve()
+        == Path(args.checkpoint_output).expanduser().resolve()
+    ):
+        raise argparse.ArgumentTypeError(
+            "--last-checkpoint-output must differ from --checkpoint-output"
+        )
     return args
 
 
@@ -111,8 +122,19 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--train-input", required=True, help="Training .pkl.")
     parser.add_argument("--validation-input", required=True, help="Validation .pkl.")
     parser.add_argument("--checkpoint-output", required=True, help="Best checkpoint path.")
+    parser.add_argument(
+        "--last-checkpoint-output",
+        help=(
+            "Latest checkpoint path saved after every epoch. "
+            "Defaults to CHECKPOINT_OUTPUT with _last before the suffix."
+        ),
+    )
     parser.add_argument("--summary-output", help="Optional JSON training summary path.")
     parser.add_argument("--init-checkpoint", help="Optional priority checkpoint to finetune.")
+    parser.add_argument(
+        "--resume-checkpoint",
+        help="Optional priority RL checkpoint to resume optimizer, epoch, and history.",
+    )
     parser.add_argument("--train-limit", type=_non_negative_int, default=None)
     parser.add_argument("--eval-limit", type=_positive_int, default=100)
     parser.add_argument("--epochs", type=_positive_int, default=20)
@@ -157,12 +179,13 @@ def _load_limited_instances(path: str, limit: int | None) -> list[CVRPInstance]:
 def _build_model(
     args: argparse.Namespace,
     device: torch.device,
-) -> tuple[PriorityScoringModel, PriorityModelConfig]:
-    if args.init_checkpoint:
-        model, checkpoint = load_priority_model_checkpoint(args.init_checkpoint, device=device)
+) -> tuple[PriorityScoringModel, PriorityModelConfig, dict | None]:
+    checkpoint_path = args.resume_checkpoint or args.init_checkpoint
+    if checkpoint_path:
+        model, checkpoint = load_priority_model_checkpoint(checkpoint_path, device=device)
         config = PriorityModelConfig(**checkpoint["config"])
         model.train()
-        return model, config
+        return model, config, checkpoint
 
     if args.num_heads > args.hidden_dim or args.hidden_dim % args.num_heads != 0:
         raise ValueError("hidden-dim must be divisible by num-heads")
@@ -172,7 +195,20 @@ def _build_model(
         num_layers=args.num_layers,
         dropout=args.dropout,
     )
-    return PriorityScoringModel(config).to(device), config
+    return PriorityScoringModel(config).to(device), config, None
+
+
+def _default_last_checkpoint_output(checkpoint_output: str) -> str:
+    path = Path(checkpoint_output)
+    if path.suffix:
+        return str(path.with_name(f"{path.stem}_last{path.suffix}"))
+    return str(path.with_name(f"{path.name}_last"))
+
+
+def _last_checkpoint_output(args: argparse.Namespace) -> str:
+    return args.last_checkpoint_output or _default_last_checkpoint_output(
+        args.checkpoint_output
+    )
 
 
 def _save_checkpoint(
@@ -183,6 +219,9 @@ def _save_checkpoint(
     config: PriorityModelConfig,
     args: argparse.Namespace,
     best_validation: dict,
+    history: list[dict],
+    checkpoint_kind: str,
+    last_checkpoint_output: str,
 ) -> None:
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -193,9 +232,13 @@ def _save_checkpoint(
             "optimizer_state_dict": optimizer.state_dict(),
             "epoch": epoch,
             "best_validation": best_validation,
+            "history": history,
             "training_args": vars(args),
             "training_mode": "priority_rl_reinforce",
+            "checkpoint_kind": checkpoint_kind,
             "init_checkpoint": args.init_checkpoint,
+            "resume_checkpoint": args.resume_checkpoint,
+            "last_checkpoint_output": last_checkpoint_output,
         },
         output_path,
     )
@@ -232,28 +275,65 @@ def train_priority_rl(args: argparse.Namespace) -> dict:
     )
     instances_by_id = {instance.instance_id: instance for instance in train_instances}
 
-    model, config = _build_model(args, device)
+    model, config, loaded_checkpoint = _build_model(args, device)
     optimizer = torch.optim.AdamW(
         model.parameters(),
         lr=args.learning_rate,
         weight_decay=args.weight_decay,
     )
 
-    history = []
+    history: list[dict] = []
     best_validation: dict | None = None
     best_cost = float("inf")
+    start_epoch = 1
+    checkpoint_epoch = 0
+    last_checkpoint_output = _last_checkpoint_output(args)
+    if args.resume_checkpoint:
+        if loaded_checkpoint is None:
+            raise RuntimeError("resume checkpoint was not loaded")
+        if loaded_checkpoint.get("training_mode") != "priority_rl_reinforce":
+            raise ValueError(
+                "--resume-checkpoint requires a priority RL checkpoint; "
+                "use --init-checkpoint for supervised imitation checkpoints"
+            )
+        if "optimizer_state_dict" not in loaded_checkpoint:
+            raise ValueError("resume checkpoint is missing optimizer_state_dict")
+        optimizer.load_state_dict(loaded_checkpoint["optimizer_state_dict"])
+        checkpoint_epoch = int(loaded_checkpoint.get("epoch", 0))
+        start_epoch = checkpoint_epoch + 1
+        history = list(loaded_checkpoint.get("history", []))
+        saved_best = loaded_checkpoint.get("best_validation")
+        if isinstance(saved_best, dict) and saved_best.get("average_cost") is not None:
+            best_validation = dict(saved_best)
+            best_cost = float(saved_best["average_cost"])
+
     total_batches = len(train_loader)
     _log(
         "[rl-train] "
         f"device={device} train_instances={len(train_instances)} "
         f"validation_instances={len(validation_instances)} epochs={args.epochs} "
+        f"start_epoch={start_epoch} "
         f"batch_size={args.batch_size} samples_per_instance={args.samples_per_instance} "
         f"temperature={args.temperature} eval_limit={args.eval_limit} "
         f"postprocess_reward={args.postprocess_reward} "
         f"postprocess_eval={args.postprocess_eval} init_checkpoint={args.init_checkpoint}"
     )
+    if args.resume_checkpoint:
+        _log(
+            "[rl-train] "
+            f"resume_checkpoint={args.resume_checkpoint} "
+            f"checkpoint_epoch={checkpoint_epoch} target_epochs={args.epochs} "
+            f"last_checkpoint_output={last_checkpoint_output}"
+        )
 
-    for epoch in range(1, args.epochs + 1):
+    if start_epoch > args.epochs:
+        _log(
+            "[rl-train] "
+            f"no_epochs_to_run checkpoint_epoch={checkpoint_epoch} "
+            f"target_epochs={args.epochs}"
+        )
+
+    for epoch in range(start_epoch, args.epochs + 1):
         epoch_start = time.perf_counter()
         model.train()
         losses: list[float] = []
@@ -368,18 +448,39 @@ def train_priority_rl(args: argparse.Namespace) -> dict:
                 config,
                 args,
                 best_validation,
+                history,
+                "best",
+                last_checkpoint_output,
             )
             _log(
                 f"[rl-epoch {epoch}/{args.epochs}] "
                 f"checkpoint_saved path={args.checkpoint_output}"
             )
+        _save_checkpoint(
+            last_checkpoint_output,
+            model,
+            optimizer,
+            epoch,
+            config,
+            args,
+            best_validation or {},
+            history,
+            "last",
+            last_checkpoint_output,
+        )
+        _log(
+            f"[rl-epoch {epoch}/{args.epochs}] "
+            f"last_checkpoint_saved path={last_checkpoint_output}"
+        )
 
     if best_validation is None:
         raise RuntimeError("training did not produce a checkpoint")
 
     result = {
         "checkpoint_output": args.checkpoint_output,
+        "last_checkpoint_output": last_checkpoint_output,
         "init_checkpoint": args.init_checkpoint,
+        "resume_checkpoint": args.resume_checkpoint,
         "train_instances": len(train_instances),
         "validation_instances": len(validation_instances),
         "best_validation": best_validation,
