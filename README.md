@@ -9,31 +9,31 @@ Raw project data should stay in the local `VRP_project/` directory and should no
 ## Run Solver
 
 ```bash
-python3 solve.py --input VRP_project/VRPData/check_data_to_students.pkl --output outputs/predictions.json --device cuda:0 --seed 2026
+python3 solve.py --input VRP_project/VRPData/check_data_to_students.pkl --output outputs/heuristic/predictions.json --device cuda:0 --seed 2026
 ```
 
 The default method is `nearest_2opt_relocate_limited_swap`: deterministic capacity-aware nearest neighbor plus route-inner 2-opt, fixed-budget inter-route relocate, and limited inter-route swap. It accepts `--device` for interface compatibility, but does not require CUDA. `nearest_2opt` remains a faster route-inner 2-opt baseline, `nearest_2opt_relocate_best` is an optional stronger CPU heuristic that performs full inter-route best relocate, `nearest_2opt_relocate_limited` keeps only fixed-budget relocate, and `nearest_2opt_relocate_candidate_limited` additionally limits candidate target routes during relocate search.
 
 ```bash
-python3 solve.py --input VRP_project/VRPData/check_data_to_students.pkl --output outputs/predictions_relocate.json --method nearest_2opt_relocate_best --device cuda:0 --seed 2026
+python3 solve.py --input VRP_project/VRPData/check_data_to_students.pkl --output outputs/heuristic/predictions_relocate.json --method nearest_2opt_relocate_best --device cuda:0 --seed 2026
 ```
 
 ```bash
-python3 solve.py --input VRP_project/VRPData/check_data_to_students.pkl --output outputs/predictions_limited.json --method nearest_2opt_relocate_limited --device cuda:0 --seed 2026
+python3 solve.py --input VRP_project/VRPData/check_data_to_students.pkl --output outputs/heuristic/predictions_limited.json --method nearest_2opt_relocate_limited --device cuda:0 --seed 2026
 ```
 
 ```bash
-python3 solve.py --input VRP_project/VRPData/check_data_to_students.pkl --output outputs/predictions_candidate_limited.json --method nearest_2opt_relocate_candidate_limited --device cuda:0 --seed 2026
+python3 solve.py --input VRP_project/VRPData/check_data_to_students.pkl --output outputs/heuristic/predictions_candidate_limited.json --method nearest_2opt_relocate_candidate_limited --device cuda:0 --seed 2026
 ```
 
 ```bash
-python3 solve.py --input VRP_project/VRPData/check_data_to_students.pkl --output outputs/predictions_limited_swap.json --method nearest_2opt_relocate_limited_swap --device cuda:0 --seed 2026
+python3 solve.py --input VRP_project/VRPData/check_data_to_students.pkl --output outputs/heuristic/predictions_limited_swap.json --method nearest_2opt_relocate_limited_swap --device cuda:0 --seed 2026
 ```
 
 Use the original nearest-neighbor method for comparison:
 
 ```bash
-python3 solve.py --input VRP_project/VRPData/check_data_to_students.pkl --output outputs/predictions_nearest.json --method nearest --device cuda:0 --seed 2026
+python3 solve.py --input VRP_project/VRPData/check_data_to_students.pkl --output outputs/heuristic/predictions_nearest.json --method nearest --device cuda:0 --seed 2026
 ```
 
 ## Evaluate Baseline
@@ -56,5 +56,5 @@ python3 -m pytest tests -v
 ## Roadmap
 
 - Current: `nearest_2opt_relocate_limited_swap` is the default CPU submission method with a tuned `5/2` swap-pass budget.
-- Next: begin report/presentation preparation, with optional extra tuning only if time remains.
-- Later: optional AI training on a CUDA machine such as the RTX 4060 laptop.
+- Next: run the optional priority-RL finetuning workflow on a CUDA machine and compare it against the heuristic default.
+- Later: use the stronger of the heuristic/RL evidence in the final report and presentation.
