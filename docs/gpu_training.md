@@ -1,5 +1,23 @@
 # GPU 迁移运行指令
 
+## 输出目录约定
+
+后续新实验按类型分目录，避免所有结果堆在 `outputs/` 根目录：
+
+```text
+outputs/
+  heuristic/
+  priority_imitation/
+  priority_rl/
+
+checkpoints/
+  priority_imitation/
+  priority_rl/
+```
+
+旧版已经生成在 `outputs/` 根目录的文件可以保留作为历史证据。新命令统一写入
+分层目录。
+
 ```bash
 # 以下命令用于在 RTX 4060 笔记本上从拉取仓库开始，运行到得到训练、评估和预测结果
 # 本文只给项目运行命令，不包含 PyTorch 安装步骤
@@ -37,31 +55,60 @@ python3 -c "import torch; print('torch=', torch.__version__); print('cuda_availa
 python3 -m pytest tests -v
 
 # 8. 先生成当前稳定 heuristic 的官方预测结果，作为安全提交版本
-python3 solve.py --input VRP_project/VRPData/check_data_to_students.pkl --output outputs/predictions.json --device cuda
+python3 solve.py --input VRP_project/VRPData/check_data_to_students.pkl --output outputs/heuristic/predictions.json --device cuda
 
 # 9. 用很小规模 smoke 训练检查训练脚本、数据读取、checkpoint 写入是否正常
 # 训练时会默认显示实时 batch 进度条；如果想降低刷新频率，可额外加 --log-every 20
-python3 scripts/train_priority_model.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --checkpoint-output checkpoints/priority_smoke.pt --summary-output outputs/priority_smoke_summary.json --train-limit 16 --eval-limit 8 --epochs 1 --batch-size 8 --hidden-dim 64 --num-heads 4 --num-layers 1 --dropout 0.1 --device cuda --no-postprocess-eval
+python3 scripts/train_priority_model.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --checkpoint-output checkpoints/priority_imitation/priority_smoke.pt --summary-output outputs/priority_imitation/priority_smoke_summary.json --train-limit 16 --eval-limit 8 --epochs 1 --batch-size 8 --hidden-dim 64 --num-heads 4 --num-layers 1 --dropout 0.1 --device cuda --no-postprocess-eval
 
 # 10. 正式训练第一版客户优先级模型；输出 best checkpoint 和训练摘要
-python3 scripts/train_priority_model.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --checkpoint-output checkpoints/priority_mse_rank.pt --summary-output outputs/priority_mse_rank_summary.json --epochs 50 --batch-size 64 --hidden-dim 128 --num-heads 4 --num-layers 2 --dropout 0.1 --learning-rate 0.001 --weight-decay 0.0001 --eval-limit 100 --device cuda --postprocess-eval
+python3 scripts/train_priority_model.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --checkpoint-output checkpoints/priority_imitation/priority_mse_rank.pt --summary-output outputs/priority_imitation/priority_mse_rank_summary.json --epochs 50 --batch-size 64 --hidden-dim 128 --num-heads 4 --num-layers 2 --dropout 0.1 --learning-rate 0.001 --weight-decay 0.0001 --eval-limit 100 --device cuda --postprocess-eval
 
 # 11. 在完整 validation 上评估训练出的优先级模型
-python3 scripts/evaluate_priority_model.py --input VRP_project/VRPData/validation_data.pkl --checkpoint checkpoints/priority_mse_rank.pt --limit 1000 --device cuda --postprocess
+python3 scripts/evaluate_priority_model.py --input VRP_project/VRPData/validation_data.pkl --checkpoint checkpoints/priority_imitation/priority_mse_rank.pt --limit 1000 --device cuda --postprocess
 
 # 12. 对官方 check 数据生成优先级模型预测结果，便于和 heuristic 输出对比
-python3 scripts/evaluate_priority_model.py --input VRP_project/VRPData/check_data_to_students.pkl --checkpoint checkpoints/priority_mse_rank.pt --output outputs/predictions_priority_model.json --device cuda --postprocess
+python3 scripts/evaluate_priority_model.py --input VRP_project/VRPData/check_data_to_students.pkl --checkpoint checkpoints/priority_imitation/priority_mse_rank.pt --output outputs/priority_imitation/predictions_priority_mse.json --device cuda --postprocess
 
 # 13. 正式训练第二版客户优先级模型：MSE + pairwise ranking loss
-python3 scripts/train_priority_model.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --checkpoint-output checkpoints/priority_mse_pairwise_rank.pt --summary-output outputs/priority_mse_pairwise_rank_summary.json --epochs 50 --batch-size 64 --hidden-dim 128 --num-heads 4 --num-layers 2 --dropout 0.1 --learning-rate 0.001 --weight-decay 0.0001 --eval-limit 100 --device cuda --postprocess-eval --loss mse_pairwise --pairwise-weight 0.5 --pairwise-margin 0.1
+python3 scripts/train_priority_model.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --checkpoint-output checkpoints/priority_imitation/priority_mse_pairwise_rank.pt --summary-output outputs/priority_imitation/priority_mse_pairwise_rank_summary.json --epochs 50 --batch-size 64 --hidden-dim 128 --num-heads 4 --num-layers 2 --dropout 0.1 --learning-rate 0.001 --weight-decay 0.0001 --eval-limit 100 --device cuda --postprocess-eval --loss mse_pairwise --pairwise-weight 0.5 --pairwise-margin 0.1
 
 # 14. 在完整 validation 上评估第二版优先级模型
-python3 scripts/evaluate_priority_model.py --input VRP_project/VRPData/validation_data.pkl --checkpoint checkpoints/priority_mse_pairwise_rank.pt --limit 1000 --device cuda --postprocess
+python3 scripts/evaluate_priority_model.py --input VRP_project/VRPData/validation_data.pkl --checkpoint checkpoints/priority_imitation/priority_mse_pairwise_rank.pt --limit 1000 --device cuda --postprocess
 
 # 15. 对官方 check 数据生成第二版优先级模型预测结果
-python3 scripts/evaluate_priority_model.py --input VRP_project/VRPData/check_data_to_students.pkl --checkpoint checkpoints/priority_mse_pairwise_rank.pt --output outputs/predictions_priority_mse_pairwise.json --device cuda --postprocess
+python3 scripts/evaluate_priority_model.py --input VRP_project/VRPData/check_data_to_students.pkl --checkpoint checkpoints/priority_imitation/priority_mse_pairwise_rank.pt --output outputs/priority_imitation/predictions_priority_mse_pairwise.json --device cuda --postprocess
 
 # 当前默认提交方法仍是 solve.py 的 heuristic
 # 只有当 priority_mse_rank.pt 在 validation 上优于默认 heuristic，并且 check 数据运行时间可接受时，再考虑把模型路线作为默认提交方案
 # 第二版 priority_mse_pairwise_rank.pt 也必须通过同样判断，不能只看训练 loss
+
+# 16. 强化学习微调 smoke：先检查 RL 训练脚本是否能跑通
+python3 scripts/train_priority_rl.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --init-checkpoint checkpoints/priority_imitation/priority_mse_pairwise_rank.pt --checkpoint-output checkpoints/priority_rl/priority_rl_smoke.pt --summary-output outputs/priority_rl/smoke_summary.json --train-limit 16 --eval-limit 8 --epochs 1 --batch-size 8 --samples-per-instance 2 --temperature 1.0 --learning-rate 0.00001 --device cuda --no-postprocess-reward --no-postprocess-eval
+
+# 17. 强化学习正式微调：从 pairwise imitation checkpoint 继续训练
+python3 scripts/train_priority_rl.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --init-checkpoint checkpoints/priority_imitation/priority_mse_pairwise_rank.pt --checkpoint-output checkpoints/priority_rl/priority_rl_finetune.pt --summary-output outputs/priority_rl/rl_finetune_summary.json --epochs 20 --batch-size 32 --samples-per-instance 2 --temperature 1.0 --learning-rate 0.00001 --weight-decay 0.0001 --eval-limit 100 --device cuda --postprocess-reward --postprocess-eval
+
+# 18. 在完整 validation 上评估 RL 微调模型
+python3 scripts/evaluate_priority_model.py --input VRP_project/VRPData/validation_data.pkl --checkpoint checkpoints/priority_rl/priority_rl_finetune.pt --limit 1000 --device cuda --postprocess
+
+# 19. 对官方 check 数据生成 RL 预测结果
+python3 scripts/evaluate_priority_model.py --input VRP_project/VRPData/check_data_to_students.pkl --checkpoint checkpoints/priority_rl/priority_rl_finetune.pt --output outputs/priority_rl/predictions_priority_rl.json --device cuda --postprocess
+```
+
+## RL 训练完成后复制回当前电脑的文件
+
+第二阶段 RL 正式训练完成后，复制以下文件回当前项目的相同相对路径：
+
+```text
+checkpoints/priority_rl/priority_rl_finetune.pt
+outputs/priority_rl/rl_finetune_summary.json
+outputs/priority_rl/predictions_priority_rl.json
+```
+
+如果只完成 smoke，则复制：
+
+```text
+checkpoints/priority_rl/priority_rl_smoke.pt
+outputs/priority_rl/smoke_summary.json
 ```

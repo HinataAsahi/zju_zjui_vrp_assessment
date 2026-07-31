@@ -314,3 +314,33 @@ python3 scripts/train_priority_model.py --train-input VRP_project/VRPData/train_
 - Do not replace the default `solve.py` heuristic. Further learned-priority
   work needs a larger methodological change rather than another small loss
   adjustment.
+
+## 2026-07-31: Priority Model REINFORCE Finetuning
+
+### Purpose
+
+This experiment tests whether REINFORCE finetuning can improve the
+`mse_pairwise` learned-priority model by directly rewarding lower route cost.
+The default `solve.py` heuristic remains unchanged.
+
+### Planned Commands
+
+Smoke:
+
+```bash
+python3 scripts/train_priority_rl.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --init-checkpoint checkpoints/priority_imitation/priority_mse_pairwise_rank.pt --checkpoint-output checkpoints/priority_rl/priority_rl_smoke.pt --summary-output outputs/priority_rl/smoke_summary.json --train-limit 16 --eval-limit 8 --epochs 1 --batch-size 8 --samples-per-instance 2 --temperature 1.0 --learning-rate 0.00001 --device cuda --no-postprocess-reward --no-postprocess-eval
+```
+
+Formal finetuning:
+
+```bash
+python3 scripts/train_priority_rl.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --init-checkpoint checkpoints/priority_imitation/priority_mse_pairwise_rank.pt --checkpoint-output checkpoints/priority_rl/priority_rl_finetune.pt --summary-output outputs/priority_rl/rl_finetune_summary.json --epochs 20 --batch-size 32 --samples-per-instance 2 --temperature 1.0 --learning-rate 0.00001 --weight-decay 0.0001 --eval-limit 100 --device cuda --postprocess-reward --postprocess-eval
+```
+
+### Decision Rule
+
+- If full-validation gap remains around `0.15`, stop priority RL and move to
+  AI-assisted heuristic.
+- If full-validation gap clearly improves below `0.156`, continue RL tuning.
+- If full-validation gap approaches the heuristic default gap around `0.088`,
+  compare check-data sanity and runtime before any default-method discussion.
