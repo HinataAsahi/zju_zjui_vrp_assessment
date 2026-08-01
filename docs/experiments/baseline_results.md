@@ -344,6 +344,31 @@ Formal finetuning:
 python3 scripts/train_priority_rl.py --train-input VRP_project/VRPData/train_data.pkl --validation-input VRP_project/VRPData/validation_data.pkl --init-checkpoint checkpoints/priority_imitation/priority_mse_pairwise_rank.pt --checkpoint-output checkpoints/priority_rl/priority_rl_finetune.pt --last-checkpoint-output checkpoints/priority_rl/priority_rl_finetune_last.pt --summary-output outputs/priority_rl/rl_finetune_summary.json --epochs 20 --batch-size 32 --samples-per-instance 2 --temperature 1.0 --learning-rate 0.00001 --weight-decay 0.0001 --eval-limit 100 --device cuda --postprocess-reward --postprocess-eval
 ```
 
+Formal RTX 4060 finetuning result:
+
+| Metric | Value |
+| --- | ---: |
+| Wall time | ~13 hours |
+| Train instances | 7000 |
+| Epochs completed | 20 |
+| Best epoch | 6 |
+| Best per-epoch validation limit | 100 |
+| Best validation average_cost | 12.148102602854195 |
+| Best validation average_gap | 0.15319454020097345 |
+| Full validation feasible count | 1000/1000 |
+| Full validation average_cost | 12.255131216816354 |
+| Full validation average_gap | 0.158813498232984 |
+| Check prediction feasible count | 1500/1500 |
+| Check prediction average_cost | 15.544025451493914 |
+
+The RL result did not pass the default-method gate. It slightly improves over
+the full-validation `mse_pairwise` priority model gap (`0.1609528098566702`) and
+check-data average cost (`15.552168765777415`), but remains far from the tuned
+heuristic default validation gap (`0.08817281823708832`) and check-data average
+cost (`13.976807065714844`). The RL prediction file is feasible on all check
+instances, but the default submission method remains
+`nearest_2opt_relocate_limited_swap`.
+
 ### Decision Rule
 
 - If full-validation gap remains around `0.15`, stop priority RL and move to

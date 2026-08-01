@@ -2,6 +2,18 @@
 
 本文件用于按日期简短记录 ZJU/ZJUI VRP assessment 项目的推进情况。
 
+## 2026-08-02
+
+- 回收 RTX 4060 上的 priority RL 正式微调结果，训练约 13 小时。
+- 规范化复制回来的 checkpoint 文件名，并完成本机 full validation 评估。
+- RL full validation gap 为 0.158813，check 预测 1500/1500 可行。
+
+### 状态与下一步
+
+- RL 较 `mse_pairwise` priority 有小幅提升，但明显弱于默认 heuristic。
+- 默认提交继续使用 `nearest_2opt_relocate_limited_swap`。
+- 后续把 RL 作为实验路线写入报告，而不是继续扩大 RL 训练。
+
 ## 2026-07-31
 
 - 设计并实现 priority RL 微调入口，完成本地 smoke 验证。

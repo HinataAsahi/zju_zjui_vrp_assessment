@@ -68,5 +68,5 @@ python3 scripts/export_remote_results.py --source-root . --export-dir exports/pr
 ## Roadmap
 
 - Current: `nearest_2opt_relocate_limited_swap` is the default CPU submission method with a tuned `5/2` swap-pass budget.
-- Next: run the optional priority-RL finetuning workflow on a CUDA machine and compare it against the heuristic default.
-- Later: use the stronger of the heuristic/RL evidence in the final report and presentation.
+- Priority-RL finetuning has been tested on an RTX 4060 laptop; it remains weaker than the heuristic default on full validation.
+- Next: prepare the final report and presentation around the heuristic default, with priority learning documented as an experimental route.
