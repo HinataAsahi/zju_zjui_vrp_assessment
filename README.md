@@ -53,6 +53,18 @@ python3 scripts/evaluate_baseline.py --input VRP_project/VRPData/validation_data
 python3 -m pytest tests -v
 ```
 
+## Optional Remote Export
+
+`scripts/export_remote_results.py` collects final priority-RL result files into
+`exports/priority_rl_results/` while preserving their relative paths. This
+serves future remote-server workflows where downloading one export directory is
+more convenient; it was not used for the current VRP assessment training on the
+RTX 4060 laptop.
+
+```bash
+python3 scripts/export_remote_results.py --source-root . --export-dir exports/priority_rl_results
+```
+
 ## Roadmap
 
 - Current: `nearest_2opt_relocate_limited_swap` is the default CPU submission method with a tuned `5/2` swap-pass budget.

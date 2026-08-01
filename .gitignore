@@ -15,6 +15,7 @@ VRP_project.zip
 outputs/
 predictions.json
 artifacts/
+exports/
 
 # Trained checkpoints can be large; add final submission artifacts explicitly.
 checkpoints/
