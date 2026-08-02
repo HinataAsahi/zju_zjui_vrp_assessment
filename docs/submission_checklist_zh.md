@@ -28,6 +28,40 @@
 
 官方要求邮件提交 code、public-set output 和 report，截止时间为 8 月 9 日 23:59。
 
+## 推荐压缩包
+
+推荐使用以下命名：
+
+```text
+SCU_ZhaoChenxu_CVRP_Assessment_Submission_20260802.zip
+```
+
+其中：
+
+- `SCU` 表示四川大学；
+- `ZhaoChenxu` 为提交人姓名拼音；
+- `CVRP_Assessment_Submission` 表示项目类型；
+- `20260802` 为整理日期。
+
+推荐压缩包内容：
+
+| 路径 | 内容 |
+| --- | --- |
+| `README.md`, `README_en.md` | 项目入口说明 |
+| `solve.py`, `src/`, `scripts/`, `tests/` | 可执行代码、训练/评估脚本和测试 |
+| `docs/final_report_zh.md` | 最终技术报告 |
+| `docs/vrp_presentation_zh.html` | HTML 展示稿 |
+| `docs/presentation_outline_zh.md` | PPT 提纲 |
+| `docs/assets/` | 展示图和报告图 |
+| `docs/experiments/baseline_results.md` | 实验结果记录 |
+| `docs/submission_checklist_zh.md` | 提交清单 |
+| `outputs/heuristic/predictions.json` | public-set 输出 |
+
+当前默认 `solve.py` 不依赖 checkpoint，因此默认压缩包不放入 `checkpoints/`。
+如果老师额外要求提交 trained model，再单独附加
+`checkpoints/priority_imitation/priority_mse_pairwise_rank.pt` 或
+`checkpoints/priority_rl/priority_rl_finetune.pt`。
+
 ## 建议一并提交或展示
 
 | 文件 | 用途 |
