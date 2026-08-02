@@ -53,6 +53,14 @@ python3 scripts/evaluate_baseline.py --input VRP_project/VRPData/validation_data
 python3 -m pytest tests -v
 ```
 
+## Documentation
+
+- [中文最终技术报告](docs/final_report_zh.md)
+- [中文答辩提纲](docs/presentation_outline_zh.md)
+- [中文技术学习笔记](docs/vrp_project_technical_learning_note_zh.md)
+- [实验结果记录](docs/experiments/baseline_results.md)
+- [GPU 迁移运行指令](docs/gpu_training.md)
+
 ## Optional Remote Export
 
 `scripts/export_remote_results.py` collects final priority-RL result files into
