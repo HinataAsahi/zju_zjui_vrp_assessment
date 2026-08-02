@@ -54,6 +54,7 @@ nearest_2opt_relocate_limited_swap
 - 最终方法 public check 1500/1500 可行。
 - 生成 `outputs/heuristic/predictions.json` 耗时约 148 秒。
 - 在质量和时间之间选择 `nearest_2opt_relocate_limited_swap` 作为默认提交方法。
+- 可插入图片：`docs/assets/cvrp_sample_solution.png`。
 
 ## Slide 8: 学习方法探索
 
@@ -68,6 +69,7 @@ nearest_2opt_relocate_limited_swap
 - 默认 heuristic full validation gap 为 0.088173。
 - 当前 RL 不是完整 POMO，只是在优先级模型上做轻量微调。
 - 因此 RL 作为实验路线记录，不替换默认提交。
+- 可插入图片：`docs/assets/method_comparison_gap.png`。
 
 ## Slide 10: 最终结论
 

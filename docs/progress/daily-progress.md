@@ -8,12 +8,13 @@
 - 规范化复制回来的 checkpoint 文件名，并完成本机 full validation 评估。
 - RL full validation gap 为 0.158813，check 预测 1500/1500 可行。
 - 新增中文最终技术报告和答辩提纲，明确默认提交方案与学习路线结论。
+- 按官方 outline 补充提交清单，并准备 CVRP 路线与方法对比可视化。
 
 ### 状态与下一步
 
 - RL 较 `mse_pairwise` priority 有小幅提升，但明显弱于默认 heuristic。
 - 默认提交继续使用 `nearest_2opt_relocate_limited_swap`。
-- 后续可基于最终报告继续整理 PPT 或 submission 说明。
+- 后续可基于最终报告、提交清单和可视化图整理 PPT。
 
 ## 2026-07-31
 

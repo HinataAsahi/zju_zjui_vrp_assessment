@@ -6,6 +6,8 @@
 
 本项目的实际策略是：先保证所有实例可行，再逐步降低 cost，并用 validation 数据和 public check 数据同时约束质量与运行时间。
 
+项目说明要求提交 code、public-set output、report 和 presentation。本项目对应的最终提交清单见 [VRP Assessment 提交清单](submission_checklist_zh.md)。
+
 ## 2. 数据与评价
 
 数据为 CVRP 实例，每个实例包含 depot 坐标、customer 坐标、customer demand、车辆容量，以及部分数据中的参考解标签。输出 JSON 中 route 使用 1-based customer 编号，不包含 depot。
@@ -56,6 +58,11 @@ nearest_2opt_relocate_limited_swap
 | Nearest + 2-opt + limited relocate + limited swap | 1000/1000 | 11.513862926474488 | 0.08817281823708832 | 0.08248868217083509 |
 
 Public check 数据上，最终默认方法生成 `outputs/heuristic/predictions.json` 时 1500/1500 个实例可行，平均 cost 为 `13.976807065714844`，正式生成耗时约 `148.00` 秒，满足约 180 秒的时间目标。
+
+可视化材料：
+
+- [CVRP 样例路线图](assets/cvrp_sample_solution.png)
+- [方法 gap 对比图](assets/method_comparison_gap.png)
 
 ## 5. 为什么选择该默认方案
 

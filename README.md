@@ -57,9 +57,18 @@ python3 -m pytest tests -v
 
 - [中文最终技术报告](docs/final_report_zh.md)
 - [中文答辩提纲](docs/presentation_outline_zh.md)
+- [中文提交清单](docs/submission_checklist_zh.md)
 - [中文技术学习笔记](docs/vrp_project_technical_learning_note_zh.md)
 - [实验结果记录](docs/experiments/baseline_results.md)
 - [GPU 迁移运行指令](docs/gpu_training.md)
+
+Report/PPT-ready visual aids are available under `docs/assets/`.
+
+Generate a route visualization for one instance:
+
+```bash
+python3 scripts/visualize_cvrp_solution.py --input VRP_project/VRPData/check_data_to_students.pkl --solutions outputs/heuristic/predictions.json --instance-id 0 --output docs/assets/cvrp_sample_solution.png --title "CVRP sample heuristic solution"
+```
 
 ## Optional Remote Export
 
