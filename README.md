@@ -57,6 +57,7 @@ python3 -m pytest tests -v
 
 - [中文最终技术报告](docs/final_report_zh.md)
 - [中文答辩提纲](docs/presentation_outline_zh.md)
+- [中文 HTML 展示稿](docs/vrp_presentation_zh.html)
 - [中文提交清单](docs/submission_checklist_zh.md)
 - [中文技术学习笔记](docs/vrp_project_technical_learning_note_zh.md)
 - [实验结果记录](docs/experiments/baseline_results.md)

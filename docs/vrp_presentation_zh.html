@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CVRP Campus Parcel Delivery Presentation</title>
+  <style>
+    :root {
+      --ink: #1d2433;
+      --muted: #596173;
+      --line: #d7dbe3;
+      --paper: #fbfaf7;
+      --panel: #ffffff;
+      --teal: #1f7a7a;
+      --red: #c0392b;
+      --amber: #b86b1f;
+      --green: #4b8b3b;
+      --blue: #3569a8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Segoe UI", "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+    }
+
+    body {
+      overflow: hidden;
+    }
+
+    .deck {
+      height: 100vh;
+      width: 100vw;
+      position: relative;
+    }
+
+    .slide {
+      display: none;
+      height: 100vh;
+      width: 100vw;
+      padding: 54px 70px 74px;
+      overflow: hidden;
+    }
+
+    .slide.active {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 28px;
+    }
+
+    .slide.hero {
+      grid-template-rows: 1fr auto;
+      background:
+        linear-gradient(rgba(251, 250, 247, 0.78), rgba(251, 250, 247, 0.92)),
+        url("assets/cvrp_sample_solution.png") center / cover no-repeat;
+    }
+
+    .hero-main {
+      align-self: center;
+      max-width: 920px;
+    }
+
+    .eyebrow {
+      margin: 0 0 18px;
+      color: var(--teal);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      max-width: 920px;
+      font-size: 58px;
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      font-size: 42px;
+      line-height: 1.16;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin-bottom: 12px;
+      font-size: 24px;
+      color: var(--teal);
+      letter-spacing: 0;
+    }
+
+    .hero-meta {
+      margin-top: 34px;
+      display: flex;
+      gap: 28px;
+      flex-wrap: wrap;
+      color: var(--ink);
+      font-size: 22px;
+      font-weight: 650;
+    }
+
+    .hero-meta span {
+      padding-left: 16px;
+      border-left: 5px solid var(--red);
+    }
+
+    .slide-subtitle {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 19px;
+      line-height: 1.55;
+      max-width: 980px;
+    }
+
+    .content-grid {
+      display: grid;
+      gap: 22px;
+      min-height: 0;
+    }
+
+    .two-col {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .wide-narrow {
+      grid-template-columns: 1.35fr 0.9fr;
+    }
+
+    .narrow-wide {
+      grid-template-columns: 0.9fr 1.35fr;
+    }
+
+    .panel {
+      min-width: 0;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 10px 24px rgba(29, 36, 51, 0.06);
+    }
+
+    .panel.tight {
+      padding: 18px;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 24px;
+      color: var(--ink);
+      font-size: 22px;
+      line-height: 1.58;
+    }
+
+    li + li {
+      margin-top: 10px;
+    }
+
+    .metric-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .metric {
+      border-top: 5px solid var(--teal);
+      background: var(--panel);
+      border-radius: 8px;
+      padding: 20px 18px;
+      box-shadow: 0 8px 20px rgba(29, 36, 51, 0.07);
+    }
+
+    .metric:nth-child(2) {
+      border-color: var(--amber);
+    }
+
+    .metric:nth-child(3) {
+      border-color: var(--green);
+    }
+
+    .metric:nth-child(4) {
+      border-color: var(--red);
+    }
+
+    .metric strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 28px;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.38;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 18px;
+      line-height: 1.35;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th,
+    td {
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--ink);
+      background: #eef5f4;
+      font-weight: 700;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    td.num,
+    th.num {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .method-flow {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      align-self: center;
+    }
+
+    .flow-step {
+      min-height: 180px;
+      padding: 22px 18px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 8px 20px rgba(29, 36, 51, 0.07);
+    }
+
+    .flow-step .num {
+      display: inline-grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      margin-bottom: 18px;
+      color: #fff;
+      background: var(--teal);
+      border-radius: 50%;
+      font-weight: 700;
+    }
+
+    .flow-step:nth-child(2) .num {
+      background: var(--blue);
+    }
+
+    .flow-step:nth-child(3) .num {
+      background: var(--amber);
+    }
+
+    .flow-step:nth-child(4) .num {
+      background: var(--red);
+    }
+
+    .flow-step strong {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 22px;
+    }
+
+    .flow-step p {
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.45;
+    }
+
+    .image-frame {
+      display: grid;
+      place-items: center;
+      min-height: 0;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 10px 24px rgba(29, 36, 51, 0.06);
+    }
+
+    .image-frame img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 4px;
+    }
+
+    .callout {
+      border-left: 6px solid var(--red);
+      background: #fff7f2;
+      border-radius: 8px;
+      padding: 20px 22px;
+      color: var(--ink);
+      font-size: 22px;
+      line-height: 1.5;
+    }
+
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .tag {
+      padding: 8px 11px;
+      color: var(--ink);
+      background: #edf4ee;
+      border: 1px solid #c9d8ca;
+      border-radius: 999px;
+      font-size: 16px;
+      font-weight: 650;
+    }
+
+    .footer {
+      position: fixed;
+      left: 70px;
+      right: 70px;
+      bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    .progress {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .bar {
+      width: 180px;
+      height: 5px;
+      background: #d8d5cd;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      width: 0;
+      height: 100%;
+      background: var(--teal);
+    }
+
+    .nav {
+      position: fixed;
+      right: 24px;
+      bottom: 20px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .nav button {
+      width: 38px;
+      height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.92);
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .nav button:hover {
+      border-color: var(--teal);
+      color: var(--teal);
+    }
+
+    code {
+      color: var(--red);
+      font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+      font-size: 0.92em;
+    }
+
+    @media print {
+      body {
+        overflow: visible;
+        background: #fff;
+      }
+
+      .deck {
+        height: auto;
+      }
+
+      .slide,
+      .slide.active {
+        display: grid;
+        width: 297mm;
+        height: 167mm;
+        page-break-after: always;
+      }
+
+      .footer,
+      .nav {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck" aria-label="VRP presentation deck">
+    <section class="slide hero active" data-title="Title">
+      <div class="hero-main">
+        <p class="eyebrow">AI-based Vehicle Routing for Campus Parcel Delivery</p>
+        <h1>CVRP 校园包裹配送路径规划</h1>
+        <p class="slide-subtitle">面向车辆容量约束的可行路径生成、启发式优化与学习方法探索</p>
+        <div class="hero-meta">
+          <span>四川大学</span>
+          <span>赵晨旭</span>
+        </div>
+      </div>
+      <div class="callout">最终提交策略：用稳定 CPU heuristic 保证可行性与时间，用学习方法作为实验探索和方法分析。</div>
+    </section>
+
+    <section class="slide" data-title="Task">
+      <header>
+        <h2>项目目标与数据</h2>
+        <p class="slide-subtitle">CVRP 要求从一个 depot 出发服务所有客户，每条路径必须满足车辆容量约束。</p>
+      </header>
+      <div class="content-grid two-col">
+        <div class="panel">
+          <h3>任务约束</h3>
+          <ul>
+            <li>每个 customer 必须访问一次且只能访问一次。</li>
+            <li>每条 route 从 depot 出发，并最终回到 depot。</li>
+            <li>每条 route 的 demand 总和不能超过 capacity。</li>
+            <li>输出 JSON 使用 1-based customer ID，depot 不写入 route。</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>数据规模</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>文件</th>
+                <th>规模</th>
+                <th>用途</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>train_data.pkl</code></td>
+                <td>7000 CVRP-50</td>
+                <td>训练</td>
+              </tr>
+              <tr>
+                <td><code>validation_data.pkl</code></td>
+                <td>1000 CVRP-50</td>
+                <td>调参和选择方法</td>
+              </tr>
+              <tr>
+                <td><code>check_data_to_students.pkl</code></td>
+                <td>1000 CVRP-50 + 500 CVRP-100</td>
+                <td>公开测试输出</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="Metrics">
+      <header>
+        <h2>评价指标</h2>
+        <p class="slide-subtitle">本项目先保证 feasibility，再比较 route cost、gap 和运行时间。</p>
+      </header>
+      <div class="metric-row">
+        <div class="metric">
+          <strong>Feasibility</strong>
+          <span>所有客户访问一次，route 不超容量。</span>
+        </div>
+        <div class="metric">
+          <strong>Cost</strong>
+          <span>所有 route 的欧氏距离总和，越低越好。</span>
+        </div>
+        <div class="metric">
+          <strong>Gap</strong>
+          <span>相对参考解 cost 的平均差距，越低越好。</span>
+        </div>
+        <div class="metric">
+          <strong>Runtime</strong>
+          <span>public check 需要满足约 180 秒目标。</span>
+        </div>
+      </div>
+      <div class="callout">工程判断：不可行解没有提交价值，所以所有方法切换都必须先通过 feasibility gate。</div>
+    </section>
+
+    <section class="slide" data-title="Method">
+      <header>
+        <h2>最终默认方法</h2>
+        <p class="slide-subtitle"><code>nearest_2opt_relocate_limited_swap</code></p>
+      </header>
+      <div class="method-flow">
+        <div class="flow-step">
+          <span class="num">1</span>
+          <strong>容量感知最近邻</strong>
+          <p>快速构造可行初始解，每次选择容量允许且最近的客户。</p>
+        </div>
+        <div class="flow-step">
+          <span class="num">2</span>
+          <strong>Route 内 2-opt</strong>
+          <p>反转单条 route 中的一段访问顺序，减少交叉和绕路。</p>
+        </div>
+        <div class="flow-step">
+          <span class="num">3</span>
+          <strong>有限轮 relocate</strong>
+          <p>把客户移动到另一条 route 的更合适位置，只接受可行改进。</p>
+        </div>
+        <div class="flow-step">
+          <span class="num">4</span>
+          <strong>有限轮 swap</strong>
+          <p>在两条 route 间交换客户，进一步改善客户组合。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="Visual">
+      <header>
+        <h2>CVRP 路线可视化</h2>
+        <p class="slide-subtitle">样例图展示 depot、客户点、route 分组，以及每条 route 的 load/capacity。</p>
+      </header>
+      <div class="content-grid wide-narrow">
+        <div class="image-frame">
+          <img src="assets/cvrp_sample_solution.png" alt="CVRP sample heuristic solution">
+        </div>
+        <div class="panel">
+          <h3>为什么需要图</h3>
+          <ul>
+            <li>直观看出路径是否从 depot 出发并回到 depot。</li>
+            <li>帮助解释 route 间 relocate 和 swap 的作用。</li>
+            <li>答辩时比只展示 JSON 更容易让听众理解 CVRP 输出。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="Results">
+      <header>
+        <h2>Validation 结果</h2>
+        <p class="slide-subtitle">最终方法在完整 validation 上保持 1000/1000 可行，并显著优于早期 baseline。</p>
+      </header>
+      <table>
+        <thead>
+          <tr>
+            <th>方法</th>
+            <th class="num">Feasible</th>
+            <th class="num">Average cost</th>
+            <th class="num">Average gap</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Nearest</td>
+            <td class="num">1000/1000</td>
+            <td class="num">13.93495</td>
+            <td class="num">0.31894</td>
+          </tr>
+          <tr>
+            <td>Nearest + 2-opt</td>
+            <td class="num">1000/1000</td>
+            <td class="num">13.41012</td>
+            <td class="num">0.26888</td>
+          </tr>
+          <tr>
+            <td>Limited relocate</td>
+            <td class="num">1000/1000</td>
+            <td class="num">11.67545</td>
+            <td class="num">0.10360</td>
+          </tr>
+          <tr>
+            <td>Limited relocate + limited swap</td>
+            <td class="num">1000/1000</td>
+            <td class="num">11.51386</td>
+            <td class="num">0.08817</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="callout">Public check：1500/1500 可行，平均 cost 13.97681，正式生成耗时约 148 秒。</div>
+    </section>
+
+    <section class="slide" data-title="Comparison">
+      <header>
+        <h2>方法对比</h2>
+        <p class="slide-subtitle">学习路线有小幅提升，但当前最强稳定方案仍是 heuristic 默认方法。</p>
+      </header>
+      <div class="content-grid narrow-wide">
+        <div class="panel">
+          <h3>关键结论</h3>
+          <ul>
+            <li>Pairwise imitation 优于 MSE imitation，但仍落后 heuristic。</li>
+            <li>Priority RL 训练约 13 小时，只带来小幅改进。</li>
+            <li>当前 RL 不是完整 POMO，只是优先级模型上的轻量微调。</li>
+          </ul>
+        </div>
+        <div class="image-frame">
+          <img src="assets/method_comparison_gap.png" alt="Method comparison on validation gap">
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="Engineering">
+      <header>
+        <h2>工程实现</h2>
+        <p class="slide-subtitle">最终项目保留可执行入口、评估工具、训练脚本、测试和文档。</p>
+      </header>
+      <div class="content-grid two-col">
+        <div class="panel">
+          <h3>核心文件</h3>
+          <ul>
+            <li><code>solve.py</code>：官方推理入口。</li>
+            <li><code>src/heuristics.py</code>：heuristic solver。</li>
+            <li><code>src/vrp_eval.py</code>：可行性和 cost 检查。</li>
+            <li><code>scripts/evaluate_baseline.py</code>：validation 评估。</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>AI 探索</h3>
+          <ul>
+            <li><code>train_priority_model.py</code>：supervised imitation。</li>
+            <li><code>train_priority_rl.py</code>：priority RL finetuning。</li>
+            <li>训练脚本默认输出进度日志和进度条。</li>
+            <li>checkpoint 作为实验材料，不作为默认提交依赖。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="Submission">
+      <header>
+        <h2>最终提交内容</h2>
+        <p class="slide-subtitle">按项目 outline，核心提交包括 code、public-set output、report 和 presentation。</p>
+      </header>
+      <div class="content-grid two-col">
+        <div class="panel">
+          <h3>建议提交</h3>
+          <ul>
+            <li>代码：<code>solve.py</code>, <code>src/</code>, <code>scripts/</code>, <code>tests/</code></li>
+            <li>公开集输出：<code>outputs/heuristic/predictions.json</code></li>
+            <li>报告：<code>docs/final_report_zh.md</code></li>
+            <li>展示：本 HTML 或由它导出的 PDF/PPT</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>不建议提交</h3>
+          <ul>
+            <li>原始数据目录 <code>VRP_project/</code></li>
+            <li>缓存目录 <code>__pycache__/</code>, <code>.pytest_cache/</code></li>
+            <li>本地远程连接说明文档</li>
+            <li>无关训练中间输出</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" data-title="Conclusion">
+      <header>
+        <h2>总结</h2>
+        <p class="slide-subtitle">本项目最终采用稳定 heuristic 作为提交方法，同时保留 AI 方法探索作为分析支撑。</p>
+      </header>
+      <div class="content-grid two-col">
+        <div class="panel">
+          <h3>最终方案</h3>
+          <ul>
+            <li>默认方法：<code>nearest_2opt_relocate_limited_swap</code></li>
+            <li>优势：全实例可行、CPU 可运行、时间可控。</li>
+            <li>结果：validation gap 0.08817，public check 1500/1500 可行。</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>后续方向</h3>
+          <ul>
+            <li>更完整的 POMO-style 强化学习。</li>
+            <li>学习型 improvement operator。</li>
+            <li>更系统的 CVRP-100 参数与时间预算调优。</li>
+          </ul>
+          <div class="tag-list">
+            <span class="tag">Feasible first</span>
+            <span class="tag">CPU-ready</span>
+            <span class="tag">Explainable heuristic</span>
+            <span class="tag">AI exploration</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>四川大学 赵晨旭 | CVRP Campus Parcel Delivery</span>
+    <span class="progress">
+      <span id="pageLabel">1 / 10</span>
+      <span class="bar" aria-hidden="true"><span id="barFill" class="bar-fill"></span></span>
+    </span>
+  </footer>
+
+  <nav class="nav" aria-label="Slide navigation">
+    <button id="prevBtn" type="button" aria-label="上一页" title="上一页">‹</button>
+    <button id="nextBtn" type="button" aria-label="下一页" title="下一页">›</button>
+  </nav>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll(".slide"));
+    const pageLabel = document.getElementById("pageLabel");
+    const barFill = document.getElementById("barFill");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    let current = 0;
+
+    function showSlide(index) {
+      current = Math.max(0, Math.min(slides.length - 1, index));
+      slides.forEach((slide, slideIndex) => {
+        slide.classList.toggle("active", slideIndex === current);
+      });
+      pageLabel.textContent = `${current + 1} / ${slides.length}`;
+      barFill.style.width = `${((current + 1) / slides.length) * 100}%`;
+      prevBtn.disabled = current === 0;
+      nextBtn.disabled = current === slides.length - 1;
+    }
+
+    prevBtn.addEventListener("click", () => showSlide(current - 1));
+    nextBtn.addEventListener("click", () => showSlide(current + 1));
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowRight" || event.key === "PageDown" || event.key === " ") {
+        event.preventDefault();
+        showSlide(current + 1);
+      }
+      if (event.key === "ArrowLeft" || event.key === "PageUp") {
+        event.preventDefault();
+        showSlide(current - 1);
+      }
+      if (event.key === "Home") {
+        showSlide(0);
+      }
+      if (event.key === "End") {
+        showSlide(slides.length - 1);
+      }
+    });
+    showSlide(0);
+  </script>
+</body>
+</html>

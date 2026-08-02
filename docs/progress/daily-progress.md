@@ -9,12 +9,13 @@
 - RL full validation gap 为 0.158813，check 预测 1500/1500 可行。
 - 新增中文最终技术报告和答辩提纲，明确默认提交方案与学习路线结论。
 - 按官方 outline 补充提交清单，并准备 CVRP 路线与方法对比可视化。
+- 生成中文 HTML 展示稿，首页写入“四川大学 赵晨旭”。
 
 ### 状态与下一步
 
 - RL 较 `mse_pairwise` priority 有小幅提升，但明显弱于默认 heuristic。
 - 默认提交继续使用 `nearest_2opt_relocate_limited_swap`。
-- 后续可基于最终报告、提交清单和可视化图整理 PPT。
+- 后续可直接用 HTML 展示稿演示，或打印为 PDF 后整理成 PPT。
 
 ## 2026-07-31
 

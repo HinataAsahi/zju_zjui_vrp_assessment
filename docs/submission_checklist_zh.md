@@ -24,7 +24,7 @@
 | Code | `solve.py`, `src/`, `scripts/`, `tests/`, `README.md` | 隐藏集评测会运行 `solve.py`。当前默认方法为 `nearest_2opt_relocate_limited_swap`。 |
 | Public-set output | `outputs/heuristic/predictions.json` | 对 `check_data_to_students.pkl` 生成的预测结果，格式为 `cvrp_v1`。 |
 | Report | `docs/final_report_zh.md` | 覆盖问题背景、方法、实验结果、AI 学习路线和最终决策。 |
-| Presentation | `docs/presentation_outline_zh.md` | 可直接改写成 PPT。 |
+| Presentation | `docs/vrp_presentation_zh.html`, `docs/presentation_outline_zh.md` | HTML 可直接展示或打印成 PDF，提纲可继续改写成 PPT。 |
 
 官方要求邮件提交 code、public-set output 和 report，截止时间为 8 月 9 日 23:59。
 
