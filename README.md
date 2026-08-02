@@ -1,5 +1,7 @@
 # ZJU/ZJUI VRP Assessment
 
+[English version](README_en.md)
+
 本仓库是一个面向 CVRP 校园包裹配送任务的完整项目。当前最终提交方案使用
 CPU 可运行的启发式算法作为默认 `solve.py` 方法，同时保留 supervised
 imitation 与 priority RL 作为 AI 学习路线探索。
