@@ -144,17 +144,3 @@ python3 solve.py --input VRP_project/VRPData/check_data_to_students.pkl --output
 ```bash
 python3 scripts/export_remote_results.py --source-root . --export-dir exports/priority_rl_results
 ```
-
-## 提交注意
-
-不要提交：
-
-- `VRP_project/` 原始数据目录
-- `VRP_project.zip`
-- `outputs/` 和 `checkpoints/` 中的大量本地实验输出
-- `.firecrawl/`
-- `.pytest_cache/`、`__pycache__/`
-- `docs/remote_4060_tailscale_ssh.md`
-
-提交材料请以 [docs/submission_checklist_zh.md](docs/submission_checklist_zh.md)
-为准。
